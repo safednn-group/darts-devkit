@@ -1,0 +1,51 @@
+[project]
+name = "darts"
+version = "0.1.0"
+description = "darts_devkit"
+readme = "README.md"
+requires-python = "==3.14.*"
+dependencies = [
+    "tqdm>=4.67.3",
+]
+
+[project.optional-dependencies]
+dev = [
+    "mypy>=1.19.1",
+    "types-tqdm>=4.67.3.20260205",
+    "ruff>=0.15.0",
+    "pipdeptree>=2.30.0",
+]
+docs = [
+    "sphinx>=8.2.3",
+    "sphinxcontrib-mermaid>=2.0.0",
+    "sphinx-immaterial>=0.13.9",
+]
+eval_one = [
+    "mypy>=1.19.1",  # example
+]
+eval_two = [
+    "ruff>=0.15.0",  # example
+]
+
+[build-system]
+requires = ["uv_build>=0.10.0,<0.11.0"]
+build-backend = "uv_build"
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+  "COM812",  # Formatter conflicts
+  "PLR2004", # Magic value used in comparison
+  "FBT002", # Boolean default positional argument in function definition
+  "FBT001", # Boolean-typed positional argument in function definition
+  "S324",   # Probable use of insecure hash functions in `hashlib`: `md5`
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.format]
+docstring-code-format = true

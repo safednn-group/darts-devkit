@@ -1,0 +1,28 @@
+stages:
+  - check
+  - docs
+
+default:
+  image: python:3.14
+  cache:
+    paths:
+      - .venv
+  before_script:
+    - curl -LsSf https://astral.sh/uv/install.sh | sh
+    - export PATH="$HOME/.local/bin:$PATH"
+    - uv sync --all-extras
+
+
+check-job:
+  stage: check
+  tags: 
+    - mimas
+  script:
+    - make check
+
+docs-job:
+  stage: docs
+  tags:
+    - mimas
+  script:
+    - make docs
