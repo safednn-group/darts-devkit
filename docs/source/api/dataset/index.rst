@@ -7,6 +7,5 @@ core API
     :glob:
 
     darts
-    evaluate
-    table
-    tables
+    record_collection
+    dataset_models

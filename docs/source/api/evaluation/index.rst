@@ -6,5 +6,6 @@ evaluate API
     :caption: Contents:
     :glob:
 
+    registry
     eval_one
     eval_two

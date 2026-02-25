@@ -1,6 +1,7 @@
 """darts init file."""
 
-from .core.darts import DARTS
+from .dataset.darts import DARTS
+from .evaluation.registry import EvaluateRegistry
 from .version import __version__
 
-__all__ = ["DARTS", "__version__"]
+__all__ = ["DARTS", "EvaluateRegistry", "__version__"]

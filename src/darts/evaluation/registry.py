@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, ClassVar
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from darts.core.darts import DARTS
+    from darts.dataset.darts import DARTS
 
 
 class EvaluateInterface(ABC):

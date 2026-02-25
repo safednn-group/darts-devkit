@@ -1,17 +1,19 @@
 """Main module for testing purposes."""
 
 import logging
-import darts.evaluate as de
+import darts.evaluation as de
 
-from darts import DARTS
-from darts.core.evaluate import EvaluateRegistry
+from darts import DARTS, EvaluateRegistry
 logger = logging.getLogger(__name__)
 
 
 def main() -> None:
     """Main method for testing purposes."""
-    darts = DARTS("/data/dataset", "dataset_exported", True, True)
-    #logger.info(darts.calibrated_sensor.all())
+    #logging.basicConfig(level=logging.ERROR)
+    logging.basicConfig(level=logging.INFO)
+    darts = DARTS("/data/dataset", "dataset_exported")
+    darts.verify_integrity()
+    logger.info(darts.category.all())
     logger.info(darts)
     logger.info(EvaluateRegistry.available())
     de.register_eval_one()  # registers only EvalOne
@@ -22,5 +24,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
     main()

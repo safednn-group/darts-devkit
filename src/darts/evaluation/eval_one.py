@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from darts.core.evaluate import EvaluateInterface, register_evaluator
+from .registry import EvaluateInterface, register_evaluator
 
 if TYPE_CHECKING:
-    from darts.core.darts import DARTS
+    from darts.dataset.darts import DARTS
 
 
 @register_evaluator("EvalOne")

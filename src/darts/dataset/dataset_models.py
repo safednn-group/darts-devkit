@@ -3,7 +3,7 @@
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
-from darts.core.table import TableRecord
+from .record_collection import Record
 
 type Vec3 = tuple[float, float, float]
 """`Vec3` is a type variable representing any x,y,z vector."""
@@ -24,50 +24,114 @@ type IntTuple = tuple[int, ...]
 """Immutable sequence of integers."""
 
 
-def _vec3(values: list[float]) -> Vec3:
-    if len(values) != 3:
+def vec3(values: list[float]) -> Vec3:
+    """Construct a variable representing any x,y,z vector.
+
+    Args:
+        values: A 3 element list of floats
+
+    Returns:
+        tuple[x, y, z]
+
+    """
+    try:
+        x, y, z = values
+    except ValueError as exc:
         msg = "Expected 3 elements"
-        raise ValueError(msg)
-    return tuple(values)  # type: ignore[return-value]
+        raise ValueError(msg) from exc
+    return (x, y, z)
 
 
-def _corners(values: list[float]) -> Corners:
-    if len(values) != 4:
+def corners(values: list[float]) -> Corners:
+    """Construct a type variable representing any min_x, min_y, max_x, max_y values.
+
+    Args:
+        values: A 4 element list of floats
+
+    Returns:
+        tuple[min_x, min_y, max_x, max_y]
+
+    """
+    try:
+        min_x, min_y, max_x, max_y = values
+    except ValueError as exc:
         msg = "Expected 4 elements"
-        raise ValueError(msg)
-    return tuple(values)  # type: ignore[return-value]
+        raise ValueError(msg) from exc
+    return (min_x, min_y, max_x, max_y)
 
 
-def _quat(values: list[float]) -> Quaternion:
-    if len(values) != 4:
+def quat(values: list[float]) -> Quaternion:
+    """Construct a type variable representing any w,x,y,z Quaternion.
+
+    Args:
+        values: A 4 element list of floats
+
+    Returns:
+        tuple[w, x, y, z]
+
+    """
+    try:
+        w, x, y, z = values
+    except ValueError as exc:
         msg = "Expected 4 elements"
-        raise ValueError(msg)
-    return tuple(values)  # type: ignore[return-value]
+        raise ValueError(msg) from exc
+    return (w, x, y, z)
 
 
-def _mat3(values: list[list[float]] | None) -> Mat3 | None:
+def mat3(values: list[list[float]] | None) -> Mat3 | None:
+    """Construct a type variable representing 3x3 matrix.
+
+    Args:
+        values: optional A 3x3 element list of floats
+
+    Returns:
+        tuple[tuple[x_1, x_2, x_3], tuple[x_4, x_5, x_6], tuple[x_7, x_8, x_9]] if values was not None, else None
+
+    """
     if not values:
         return None
-    if len(values) != 3 or any(len(row) != 3 for row in values):
-        msg = "Expected 3x3 matrix"
-        raise ValueError(msg)
-    return tuple(tuple(row) for row in values)  # type: ignore[return-value]
+    try:
+        x_1, x_2, x_3 = values[0]
+        x_4, x_5, x_6 = values[0]
+        x_7, x_8, x_9 = values[0]
+    except ValueError as exc:
+        msg = "Expected 3x3 elements"
+        raise ValueError(msg) from exc
+    return ((x_1, x_2, x_3), (x_4, x_5, x_6), (x_7, x_8, x_9))
 
 
-def _str_tuple(values: list[str]) -> StrTuple:
+def str_tuple(values: list[str]) -> StrTuple:
+    """Construct Tuple of strings from list.
+
+    Args:
+        values: A list of strings
+
+    Returns:
+        tuple[str, ...]
+
+    """
     for value in values:
         if not isinstance(value, str):
             msg = "Value is not str"
             raise TypeError(msg)
-    return tuple(values)  # type: ignore[return-value]
+    return tuple(values)
 
 
-def _int_tuple(values: list[int]) -> IntTuple:
+def int_tuple(values: list[int]) -> IntTuple:
+    """Construct Tuple of ints from list.
+
+    Args:
+        values: A list of ints
+
+    Returns:
+        tuple[int, ...]
+
+    """
     for value in values:
         if not isinstance(value, int):
             msg = "Value is not int"
             raise TypeError(msg)
-    return tuple(values)  # type: ignore[return-value]
+    return tuple(values)
 
 
 @dataclass(slots=True)
@@ -94,26 +158,7 @@ class Timestamp:
 
 
 @dataclass(slots=True)
-class Attribute(TableRecord):
-    """Semantic attribute assigned to an object annotation.
-
-    Attributes describe dynamic or contextual properties of an object.
-    They are referenced by annotations to provide additional semantic detail
-    beyond the object's category.
-
-    Attributes:
-        token: Unique identifier of the record.
-        name: Human-readable name of the attribute.
-        description: Detailed explanation of the attribute's meaning and usage.
-    """
-
-    token: str
-    name: str
-    description: str
-
-
-@dataclass(slots=True)
-class CalibratedSensor(TableRecord):
+class CalibratedSensor(Record):
     """Calibration parameters for a specific sensor instance.
 
     Represents the rigid transformation from the ego vehicle frame
@@ -145,15 +190,15 @@ class CalibratedSensor(TableRecord):
 
         """
         return cls(
-            translation=_vec3(data.pop("translation")),
-            rotation=_quat(data.pop("rotation")),
-            camera_intrinsic=_mat3(data.pop("camera_intrinsic")),
+            translation=vec3(data.pop("translation")),
+            rotation=quat(data.pop("rotation")),
+            camera_intrinsic=mat3(data.pop("camera_intrinsic")),
             **data,
         )
 
 
 @dataclass(slots=True)
-class Category(TableRecord):
+class Category(Record):
     """Object category definition.
 
     Attributes:
@@ -168,7 +213,7 @@ class Category(TableRecord):
 
 
 @dataclass(slots=True)
-class EgoPose(TableRecord, Timestamp):
+class EgoPose(Record, Timestamp):
     """Ego vehicle pose at a particular timestamp.
 
     Pose is expressed with respect to the global coordinate system.
@@ -195,11 +240,11 @@ class EgoPose(TableRecord, Timestamp):
             An instance of the subclass.
 
         """
-        return cls(translation=_vec3(data.pop("translation")), rotation=_quat(data.pop("rotation")), **data)
+        return cls(translation=vec3(data.pop("translation")), rotation=quat(data.pop("rotation")), **data)
 
 
 @dataclass(slots=True)
-class Ins(TableRecord, Timestamp):
+class INS(Record, Timestamp):
     """Inertial Navigation System (INS) record.
 
     Represents ego-vehicle pose and motion state at a specific timestamp.
@@ -258,7 +303,7 @@ class Ins(TableRecord, Timestamp):
 
 
 @dataclass(slots=True)
-class Instance(TableRecord):
+class Instance(Record):
     """3D Object instance record.
 
     Represents a tracked 3D object instance across multiple annotations.
@@ -281,7 +326,7 @@ class Instance(TableRecord):
 
 
 @dataclass(slots=True)
-class Instance2D(TableRecord):
+class Instance2D(Record):
     """2D Object instance record.
 
     Represents a tracked 2D object instance across multiple annotations by camera.
@@ -311,7 +356,7 @@ class Instance2D(TableRecord):
 
 
 @dataclass(slots=True)
-class Metadata(TableRecord):
+class SceneMetadata(Record):
     """Scene-level contextual metadata.
 
     Represents environmental, infrastructure, traffic, and movement
@@ -412,7 +457,7 @@ class Metadata(TableRecord):
     road_plates_signs: StrTuple
 
     @classmethod
-    def from_dict(cls, data: dict) -> Metadata:
+    def from_dict(cls, data: dict) -> SceneMetadata:
         """Construct an instance from a dictionary.
 
         Args:
@@ -424,29 +469,29 @@ class Metadata(TableRecord):
         """
         return cls(
             date=datetime.fromisoformat(data.pop("date")),
-            road_geometry=_str_tuple(data.pop("road_geometry")),
-            traffic_infrastructure=_str_tuple(data.pop("traffic_infrastructure")),
-            road_signs_types=_str_tuple(data.pop("road_signs_types")),
-            events=_str_tuple(data.pop("events")),
-            road_category=_str_tuple(data.pop("road_category")),
-            number_of_lanes=_int_tuple(data.pop("number_of_lanes")),
-            traffic_participants=_str_tuple(data.pop("traffic_participants")),
-            environment_conditions=_str_tuple(data.pop("environment_conditions")),
-            straight_movement=_str_tuple(data.pop("straight_movement")),
-            curve_movement=_str_tuple(data.pop("curve_movement")),
-            warning_signs=_str_tuple(data.pop("warning_signs")),
-            prohibition_signs=_str_tuple(data.pop("prohibition_signs")),
-            mandatory_signs=_str_tuple(data.pop("mandatory_signs")),
-            information_signs=_str_tuple(data.pop("information_signs")),
-            direction_and_location_signs=_str_tuple(data.pop("direction_and_location_signs")),
-            supplementary_signs=_str_tuple(data.pop("supplementary_signs")),
-            road_plates_signs=_str_tuple(data.pop("road_plates_signs")),
+            road_geometry=str_tuple(data.pop("road_geometry")),
+            traffic_infrastructure=str_tuple(data.pop("traffic_infrastructure")),
+            road_signs_types=str_tuple(data.pop("road_signs_types")),
+            events=str_tuple(data.pop("events")),
+            road_category=str_tuple(data.pop("road_category")),
+            number_of_lanes=int_tuple(data.pop("number_of_lanes")),
+            traffic_participants=str_tuple(data.pop("traffic_participants")),
+            environment_conditions=str_tuple(data.pop("environment_conditions")),
+            straight_movement=str_tuple(data.pop("straight_movement")),
+            curve_movement=str_tuple(data.pop("curve_movement")),
+            warning_signs=str_tuple(data.pop("warning_signs")),
+            prohibition_signs=str_tuple(data.pop("prohibition_signs")),
+            mandatory_signs=str_tuple(data.pop("mandatory_signs")),
+            information_signs=str_tuple(data.pop("information_signs")),
+            direction_and_location_signs=str_tuple(data.pop("direction_and_location_signs")),
+            supplementary_signs=str_tuple(data.pop("supplementary_signs")),
+            road_plates_signs=str_tuple(data.pop("road_plates_signs")),
             **data,
         )
 
 
 @dataclass(slots=True)
-class Sample(TableRecord, Timestamp):
+class Sample(Record, Timestamp):
     """Dataset sample record.
 
     A sample represents a keyframe in a scene and links to sensor data
@@ -474,7 +519,7 @@ class Sample(TableRecord, Timestamp):
 
 
 @dataclass(slots=True)
-class SampleAnnotation(TableRecord):
+class SampleAnnotation(Record):
     """A single 3D annotation of an object in a sample.
 
     Represents a 3D bounding box in a sample, associated with an 3D instance
@@ -518,16 +563,16 @@ class SampleAnnotation(TableRecord):
 
         """
         return cls(
-            translation=_vec3(data.pop("translation")),
-            size=_vec3(data.pop("size")),
-            rotation=_quat(data.pop("rotation")),
-            attribute_tokens=_str_tuple(data.pop("attribute_tokens")),
+            translation=vec3(data.pop("translation")),
+            size=vec3(data.pop("size")),
+            rotation=quat(data.pop("rotation")),
+            attribute_tokens=str_tuple(data.pop("attribute_tokens")),
             **data,
         )
 
 
 @dataclass(slots=True)
-class SampleAnnotation2D(TableRecord):
+class SampleAnnotation2D(Record):
     """A 2D bounding box annotation of an object in a camera sample_data.
 
     Attributes:
@@ -566,13 +611,13 @@ class SampleAnnotation2D(TableRecord):
 
         """
         return cls(
-            corners=_corners(data.pop("corners")),
+            corners=corners(data.pop("corners")),
             **data,
         )
 
 
 @dataclass(slots=True)
-class SampleData(TableRecord, Timestamp):
+class SampleData(Record, Timestamp):
     """A sensor data record associated with a sample.
 
     Represents a single file captured by a sensor (LiDAR, camera, radar) in a sample.
@@ -614,7 +659,7 @@ class SampleData(TableRecord, Timestamp):
 
 
 @dataclass(slots=True)
-class Scene(TableRecord):
+class Scene(Record):
     """A scene in the dataset, representing a continuous sequence of samples.
 
     Attributes:
@@ -624,7 +669,7 @@ class Scene(TableRecord):
         nbr_samples: Number of samples in the scene.
         first_sample_token: Token of the first sample in the scene.
         last_sample_token: Token of the last sample in the scene.
-        metadata_token: Token referencing the associated netadata record.
+        scene_metadata_token: Token referencing the associated scene metadata record.
     """
 
     token: str
@@ -633,11 +678,11 @@ class Scene(TableRecord):
     nbr_samples: int
     first_sample_token: str
     last_sample_token: str
-    metadata_token: str = ""
+    scene_metadata_token: str = ""
 
 
 @dataclass(slots=True)
-class Sensor(TableRecord):
+class Sensor(Record):
     """A sensor in the dataset.
 
     Represents a physical sensor mounted on the ego vehicle.

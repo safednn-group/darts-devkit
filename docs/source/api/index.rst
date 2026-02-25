@@ -6,5 +6,5 @@ DARTS-devkit API
     :caption: Contents:
     :glob:
 
-    core/index
-    evaluate/index
+    dataset/index
+    evaluation/index

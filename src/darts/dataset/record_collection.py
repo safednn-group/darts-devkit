@@ -1,16 +1,20 @@
-"""Module for Table class."""
+"""Module for RecordCollection class."""
 
+import logging
+import sys
 from dataclasses import dataclass
 from typing import Self, TypeVar
 
 from tqdm import tqdm
 
-T = TypeVar("T", bound="TableRecord")
-"""`T` is a type variable representing any subclass of :class:`TableRecord`."""
+logger = logging.getLogger(__name__)
+
+T = TypeVar("T", bound="Record")
+"""`T` is a type variable representing any subclass of :class:`Record`."""
 
 
 @dataclass(slots=True)
-class TableRecord:
+class Record:
     """Base class for records that can be loaded from a dictionary.
 
     Subclasses must implement the `from_dict` method.
@@ -30,10 +34,10 @@ class TableRecord:
         return cls(**data)
 
 
-class Table[T]:
+class RecordCollection[T]:
     """In-memory indexed collection of dataset records.
 
-    `T` is a type variable representing any subclass of :class:`TableRecord`.
+    `T` is a type variable representing any subclass of :class:`Record`.
 
     This class provides:
         - O(1) lookup by a specified key.
@@ -46,13 +50,13 @@ class Table[T]:
     Args:
         records: List of instances of type `T`.
         key: Attribute name to use as the dictionary key for O(1) lookup (default: "token").
-        verbose: Whether to show a progress bar while indexing.
     """
 
-    def __init__(self, records: list[T], key: str = "token", verbose: bool = False) -> None:
+    def __init__(self, records: list[T], key: str = "token") -> None:
         """Create a table with instances of class `T` and prepare indexing by a key."""
         self._records = records
-        iterable = tqdm(records, desc="Building index", unit="records") if verbose else records
+        show_progress = sys.stderr.isatty() and logger.isEnabledFor(logging.INFO)
+        iterable = tqdm(records, desc="Building index", unit="records") if show_progress else records
         self._index = {getattr(r, key): r for r in iterable}
 
     def get(self, token: str) -> T:

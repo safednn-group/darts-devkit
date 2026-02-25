@@ -91,17 +91,31 @@ A typical usage pattern looks like this:
 
 .. code-block:: python
 
-    import darts.evaluate as de
+    import logging
+    import darts.evaluation as de
 
-    from darts import DARTS
-    from darts.core.evaluate import EvaluateRegistry
+    from darts import DARTS, EvaluateRegistry
+    logger = logging.getLogger(__name__)
 
-    darts = DARTS("/data/darts", "v1.0")
-    de.register_eval_one()
 
-    evaluator_cls = EvaluateRegistry.get("EvalOne")
-    evaluator = evaluator_cls()
-    evaluator.evaluate(darts)
+    def main() -> None:
+        """Main method for testing purposes."""
+        #logging.basicConfig(level=logging.ERROR)
+        logging.basicConfig(level=logging.INFO)
+        darts = DARTS("/data/dataset", "dataset_exported")
+        darts.verify_integrity()
+        logger.info(darts.category.all())
+        logger.info(darts)
+        logger.info(EvaluateRegistry.available())
+        de.register_eval_one()  # registers only EvalOne
+        logger.info(EvaluateRegistry.available())
+        evaluator_cls = EvaluateRegistry.get("EvalOne")
+        evaluator = evaluator_cls()
+        logger.info(evaluator.evaluate(darts))
+
+
+    if __name__ == "__main__":
+        main()
 
 This approach allows new visualization or evaluation backends to be added
 without changes to the DARTS core.

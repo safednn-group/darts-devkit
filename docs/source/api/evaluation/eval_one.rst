@@ -1,6 +1,6 @@
 Eval one
 --------
 
-.. automodule:: darts.evaluate.eval_one
+.. automodule:: darts.evaluation.eval_one
    :members:
    :private-members:
