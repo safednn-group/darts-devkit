@@ -30,6 +30,11 @@ make format
 make check
 ```
 
+### Unit tests check
+```
+make test
+```
+
 ### Building documentation
 
 ```
