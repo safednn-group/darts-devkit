@@ -1,5 +1,6 @@
 stages:
   - check
+  - test
   - docs
 
 default:
@@ -19,6 +20,13 @@ check-job:
     - mimas
   script:
     - make check
+
+test-job:
+  stage: test
+  tags:
+    - mimas
+  script:
+    - make test
 
 docs-job:
   stage: docs
