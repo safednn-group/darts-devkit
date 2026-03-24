@@ -10,6 +10,9 @@ lint:
 check: lint
 	uv run mypy src/
 
+test:
+	uv run pytest -v --random-order --cov=darts
+
 docs:
 	rm -rf docs/build
 	uv run sphinx-build -b html docs/source docs/build/html
