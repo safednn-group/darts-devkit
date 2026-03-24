@@ -143,7 +143,7 @@ class DARTS:
             raise ValueError(msg)
 
     def filter_scenes(self, query: dict) -> DARTS:
-        """Returs DARTS instance with filtered scene based on query with possible not, and, or operands.
+        """Returs DARTS instance with filtered scene based on query with possible NOT, AND, OR operands.
 
         Example
         -------
@@ -157,7 +157,7 @@ class DARTS:
             }
 
         Args:
-            query: logical query wiyh which we filter records
+            query: logical query with which we filter records
 
         Returns:
             DARTS instance with filtered records
