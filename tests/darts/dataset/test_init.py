@@ -13,6 +13,7 @@ def test_init_sets_root_and_version(monkeypatch):
     assert d._root == Path("data")
     assert d._version == "v1"
 
+
 def test_init_show_progress(monkeypatch):
     monkeypatch.setattr(DARTS, "_load_table", lambda self, name, cls: None)
     monkeypatch.setattr(DARTS, "_create_relationships", lambda self: None)
@@ -35,6 +36,7 @@ def test_init_show_progress(monkeypatch):
     d = make_instance(False, False)
     assert d._show_progress is False
 
+
 def test_repr(monkeypatch):
     monkeypatch.setattr(DARTS, "_load_table", lambda self, name, cls: None)
     monkeypatch.setattr(DARTS, "_create_relationships", lambda self: None)
@@ -42,6 +44,7 @@ def test_repr(monkeypatch):
     d = DARTS("data", "v1")
     r = repr(d)
     assert "DARTS(root=data" in r and "version=v1" in r
+
 
 def test_load_table_calls(monkeypatch):
     called_tables = []

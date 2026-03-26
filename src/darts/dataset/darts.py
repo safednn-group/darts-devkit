@@ -29,6 +29,8 @@ from .record_collection import RecordCollection, T
 
 logger = logging.getLogger(__name__)
 
+type MetadataValue = str | int | float | bool | tuple[str] | tuple[int] | tuple[float] | tuple[bool]
+
 type QueryValue = str | int | float | bool | list[str] | list[int] | list[float] | list[bool]
 
 
@@ -70,6 +72,11 @@ class DARTS:
     def category(self) -> RecordCollection[Category]:
         """RecordCollection of Category records."""
         return self._category
+
+    @property
+    def sensor(self) -> RecordCollection[Sensor]:
+        """RecordCollection of Sensor records."""
+        return self._sensor
 
     @property
     def ego_pose(self) -> RecordCollection[EgoPose]:
@@ -145,13 +152,15 @@ class DARTS:
     def filter_scenes(self, query: dict) -> DARTS:
         """Returs DARTS instance with filtered scene based on query with possible NOT, AND, OR operands.
 
-        Example
-        -------
+        This example returns scenes that have ('curve' or 'straight' road_geometry) or intersection_y != 1.
+
+        Example:
+        --------
         .. code-block:: python
 
             query = {
                 "or": [
-                    {"intersection_y": 1},
+                    {"not": {"intersection_y": 1}},
                     {"road_geometry": ["curve", "straight"]},
                 ]
             }
@@ -227,11 +236,17 @@ class DARTS:
         sample_datas: list[SampleData] = []
         for sample_data_token in sample.data.values():
             sample_datas_temp = [self._sample_data.get(sample_data_token)]
-            while sample_datas_temp[-1].prev != "" and sample_datas_temp[-1].sample_token == sample_token:
+            while (
+                sample_datas_temp[-1].prev != ""
+                and self._sample_data.get(sample_datas_temp[-1].prev).sample_token == sample_token
+            ):
                 sample_datas_temp.append(self._sample_data.get(sample_datas_temp[-1].prev))
 
             sample_datas_temp = [*sample_datas_temp[1:], sample_datas_temp[0]]
-            while sample_datas_temp[-1].next != "" and sample_datas_temp[-1].sample_token == sample_token:
+            while (
+                sample_datas_temp[-1].next != ""
+                and self._sample_data.get(sample_datas_temp[-1].next).sample_token == sample_token
+            ):
                 sample_datas_temp.append(self._sample_data.get(sample_datas_temp[-1].next))
             sample_datas += sample_datas_temp
         return sample_datas
@@ -239,11 +254,11 @@ class DARTS:
     def _get_ins_by_sample(self, sample_token: str) -> list[INS]:
         sample = self._sample.get(sample_token)
         ins_data: list[INS] = [self._ins.get(sample.ins_token)]
-        while ins_data[-1].prev != "" and ins_data[-1].sample_token == sample_token:
+        while ins_data[-1].prev != "" and self._ins.get(ins_data[-1].prev).sample_token == sample_token:
             ins_data.append(self._ins.get(ins_data[-1].prev))
 
         ins_data = [*ins_data[1:], ins_data[0]]
-        while ins_data[-1].next != "" and ins_data[-1].sample_token == sample_token:
+        while ins_data[-1].next != "" and self._ins.get(ins_data[-1].next).sample_token == sample_token:
             ins_data.append(self._ins.get(ins_data[-1].next))
         return ins_data
 
@@ -281,6 +296,14 @@ class DARTS:
         return result
 
     def _match_query(self, metadata: SceneMetadata, query: dict) -> bool:
+        if not isinstance(query, dict):
+            msg = f"Query {query} is not a dictionary."
+            logger.error(msg)
+            raise KeyError(msg)
+        if len(query.keys()) != 1:
+            msg = f"Query {query} does not have one key."
+            logger.error(msg)
+            raise KeyError(msg)
         if "and" in query:
             return self._match_and(metadata, query["and"])
 
@@ -310,17 +333,17 @@ class DARTS:
 
         return True
 
-    def _match_field(self, metadata_value: QueryValue, query_value: QueryValue) -> bool:
+    def _match_field(self, metadata_value: MetadataValue, query_value: QueryValue) -> bool:
+        metadata_values = list(metadata_value) if isinstance(metadata_value, tuple) else [metadata_value]
+        query_values = query_value if isinstance(query_value, list) else [query_value]
 
-        if isinstance(metadata_value, list):
-            if isinstance(query_value, list):
-                return any(v in metadata_value for v in query_value)
-            return query_value in metadata_value
-
-        if isinstance(query_value, list):
-            return metadata_value in query_value
-
-        return metadata_value == query_value
+        for mv in metadata_values:
+            for qv in query_values:
+                if not isinstance(qv, type(mv)):
+                    msg = f"Type mismatch: metadata {mv} has {type(mv).__name__}, query {qv} has {type(qv).__name__}"
+                    logger.error(msg)
+                    raise TypeError(msg)
+        return any(v in metadata_values for v in query_values)
 
     def _clone_empty(self) -> DARTS:
         obj = object.__new__(DARTS)
