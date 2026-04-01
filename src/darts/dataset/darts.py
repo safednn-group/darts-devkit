@@ -152,18 +152,22 @@ class DARTS:
     def filter_scenes(self, query: dict) -> DARTS:
         """Returs DARTS instance with filtered scene based on query with possible NOT, AND, OR operands.
 
-        This example returns scenes that have ('curve' or 'straight' road_geometry) or intersection_y != 1.
-
         Example:
         --------
         .. code-block:: python
 
             query = {
-                "or": [
-                    {"not": {"intersection_y": 1}},
-                    {"road_geometry": ["curve", "straight"]},
-                ]
-            }
+                        "or": [
+                            {"not": {"intersection_y": 1}},
+                            {"traffic_participants": ["trucks", "cyclist"]},
+                        ]
+                    }
+
+
+        A list is treated as a disjunction, not a conjunction. It means that at least one of the values of the list
+        must be present in the scene metadata. In the example above, a track or a cyclist should be present in the
+        recording, not both of them.
+
 
         Args:
             query: logical query with which we filter records
@@ -404,7 +408,7 @@ class DARTS:
         adding_desc = "Adding data tokens to sample"
         prepare_desc = "Preparing data tokens for sample"
         logger.info(adding_desc)
-        sample_data_by_sample: defaultdict[str, dict[str, str]] = defaultdict(dict)
+        sample_data_by_sample: dict[str, dict[str, str]] = defaultdict(dict)
         sample_data_iterable = self._progress(self._sample_data.all(), prepare_desc, "records")
 
         for sample_data in sample_data_iterable:
@@ -419,7 +423,7 @@ class DARTS:
         adding_desc = "Adding annotation tokens to sample"
         prepare_desc = "Preparing annotation tokens for sample"
         logger.info(adding_desc)
-        sample_annotation_by_sample: defaultdict[str, list[str]] = defaultdict(list)
+        sample_annotation_by_sample: dict[str, list[str]] = defaultdict(list)
         sample_annotation_iterable = self._progress(self._sample_annotation.all(), prepare_desc, "records")
 
         for sample_annotation in sample_annotation_iterable:
@@ -432,7 +436,7 @@ class DARTS:
         adding_desc = "Adding annotation tokens to camera sample data"
         prepare_desc = "Preparing annotation tokens for camera sample data"
         logger.info(adding_desc)
-        sample_annotation_by_sample_data: defaultdict[str, list[str]] = defaultdict(list)
+        sample_annotation_by_sample_data: dict[str, list[str]] = defaultdict(list)
         sample_annotation_2d_iterable = self._progress(self._sample_annotation_2d.all(), prepare_desc, "records")
 
         for sample_annotation_2d in sample_annotation_2d_iterable:

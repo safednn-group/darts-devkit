@@ -129,15 +129,6 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
-dev = [
-    { name = "mypy" },
-    { name = "pipdeptree" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
-    { name = "pytest-random-order" },
-    { name = "ruff" },
-    { name = "types-tqdm" },
-]
 docs = [
     { name = "sphinx" },
     { name = "sphinx-immaterial" },
@@ -150,23 +141,38 @@ eval-two = [
     { name = "ruff" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "mypy" },
+    { name = "pipdeptree" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "pytest-random-order" },
+    { name = "ruff" },
+    { name = "types-tqdm" },
+]
+
 [package.metadata]
 requires-dist = [
-    { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.19.1" },
     { name = "mypy", marker = "extra == 'eval-one'", specifier = ">=1.19.1" },
-    { name = "pipdeptree", marker = "extra == 'dev'", specifier = ">=2.30.0" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=9.0.2" },
-    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=7.0.0" },
-    { name = "pytest-random-order", marker = "extra == 'dev'", specifier = ">=1.2.0" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.15.0" },
     { name = "ruff", marker = "extra == 'eval-two'", specifier = ">=0.15.0" },
     { name = "sphinx", marker = "extra == 'docs'", specifier = ">=8.2.3" },
     { name = "sphinx-immaterial", marker = "extra == 'docs'", specifier = ">=0.13.9" },
     { name = "sphinxcontrib-mermaid", marker = "extra == 'docs'", specifier = ">=2.0.0" },
     { name = "tqdm", specifier = ">=4.67.3" },
-    { name = "types-tqdm", marker = "extra == 'dev'", specifier = ">=4.67.3.20260205" },
 ]
-provides-extras = ["dev", "docs", "eval-one", "eval-two"]
+provides-extras = ["docs", "eval-one", "eval-two"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "mypy", specifier = ">=1.19.1" },
+    { name = "pipdeptree", specifier = ">=2.30.0" },
+    { name = "pytest", specifier = ">=9.0.2" },
+    { name = "pytest-cov", specifier = ">=7.0.0" },
+    { name = "pytest-random-order", specifier = ">=1.2.0" },
+    { name = "ruff", specifier = ">=0.15.0" },
+    { name = "types-tqdm", specifier = ">=4.67.3.20260205" },
+]
 
 [[package]]
 name = "docutils"
