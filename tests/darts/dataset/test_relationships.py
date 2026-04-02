@@ -1,5 +1,7 @@
 from types import SimpleNamespace
+
 from darts.dataset.darts import DARTS
+
 
 def test_add_channel_to_sample_data(monkeypatch, sample_data_record, calibrated_sensor_record, sensor_record):
     d = object.__new__(DARTS)
@@ -15,6 +17,7 @@ def test_add_channel_to_sample_data(monkeypatch, sample_data_record, calibrated_
     DARTS._add_channel_to_sample_data(d)
     assert sd.channel == sensor.channel
 
+
 def test_add_ins_to_sample(monkeypatch, sample_record, ins_record):
     d = object.__new__(DARTS)
     s = sample_record()
@@ -26,6 +29,7 @@ def test_add_ins_to_sample(monkeypatch, sample_record, ins_record):
 
     DARTS._add_ins_to_sample(d)
     assert s.ins_token == i.token
+
 
 def test_add_scene_metadata_to_scene(monkeypatch, scene_metadata_record, scene_record):
     d = object.__new__(DARTS)
@@ -39,6 +43,7 @@ def test_add_scene_metadata_to_scene(monkeypatch, scene_metadata_record, scene_r
     DARTS._add_scene_metadata_to_scene(d)
     assert scene.scene_metadata_token == meta.token
 
+
 def test_add_data_to_sample(monkeypatch, sample_data_record, sample_record):
     d = object.__new__(DARTS)
     sd = sample_data_record(channel="CAM_FRONT")
@@ -50,6 +55,7 @@ def test_add_data_to_sample(monkeypatch, sample_data_record, sample_record):
 
     DARTS._add_data_to_sample(d)
     assert s.data == {sd.channel: sd.token}
+
 
 def test_add_annotations_to_sample(monkeypatch, sample_annotation_record, sample_record):
     d = object.__new__(DARTS)
@@ -63,7 +69,10 @@ def test_add_annotations_to_sample(monkeypatch, sample_annotation_record, sample
     DARTS._add_annotations_to_sample(d)
     assert s.anns == (ann.token,)
 
-def test_add_annotations_to_sample_data(monkeypatch, sample_annotation_2d_record, sample_record, sample_data_record, calibrated_sensor_record, sensor_record):
+
+def test_add_annotations_to_sample_data(
+    monkeypatch, sample_annotation_2d_record, sample_record, sample_data_record, calibrated_sensor_record, sensor_record
+):
     d = object.__new__(DARTS)
     sd = sample_data_record()
     s = sample_record()
@@ -82,13 +91,18 @@ def test_add_annotations_to_sample_data(monkeypatch, sample_annotation_2d_record
     DARTS._add_annotations_to_sample_data(d)
     assert sd.anns == (ann2d.token,)
 
+
 def test_create_relationships(monkeypatch):
     d = object.__new__(DARTS)
     calls = []
 
     for method in [
-        "_add_channel_to_sample_data", "_add_scene_metadata_to_scene", "_add_ins_to_sample",
-        "_add_data_to_sample", "_add_annotations_to_sample", "_add_annotations_to_sample_data"
+        "_add_channel_to_sample_data",
+        "_add_scene_metadata_to_scene",
+        "_add_ins_to_sample",
+        "_add_data_to_sample",
+        "_add_annotations_to_sample",
+        "_add_annotations_to_sample_data",
     ]:
         monkeypatch.setattr(DARTS, method, lambda self, m=method: calls.append(m))
 
@@ -99,5 +113,5 @@ def test_create_relationships(monkeypatch):
         "_add_ins_to_sample",
         "_add_data_to_sample",
         "_add_annotations_to_sample",
-        "_add_annotations_to_sample_data"
+        "_add_annotations_to_sample_data",
     }

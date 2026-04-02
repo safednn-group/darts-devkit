@@ -29,6 +29,10 @@ from .record_collection import RecordCollection, T
 
 logger = logging.getLogger(__name__)
 
+type MetadataValue = str | int | float | bool | tuple[str] | tuple[int] | tuple[float] | tuple[bool]
+
+type QueryValue = str | int | float | bool | list[str] | list[int] | list[float] | list[bool]
+
 
 class DARTS:
     """Main DARTS class for managing dataset tables.
@@ -68,6 +72,11 @@ class DARTS:
     def category(self) -> RecordCollection[Category]:
         """RecordCollection of Category records."""
         return self._category
+
+    @property
+    def sensor(self) -> RecordCollection[Sensor]:
+        """RecordCollection of Sensor records."""
+        return self._sensor
 
     @property
     def ego_pose(self) -> RecordCollection[EgoPose]:
@@ -140,6 +149,216 @@ class DARTS:
             logger.error(msg)
             raise ValueError(msg)
 
+    def filter_scenes(self, query: dict) -> DARTS:
+        """Returs DARTS instance with filtered scene based on query with possible NOT, AND, OR operands.
+
+        Example:
+        --------
+        .. code-block:: python
+
+            query = {
+                        "or": [
+                            {"not": {"intersection_y": 1}},
+                            {"traffic_participants": ["trucks", "cyclist"]},
+                        ]
+                    }
+
+
+        A list is treated as a disjunction, not a conjunction. It means that at least one of the values of the list
+        must be present in the scene metadata. In the example above, a track or a cyclist should be present in the
+        recording, not both of them.
+
+
+        Args:
+            query: logical query with which we filter records
+
+        Returns:
+            DARTS instance with filtered records
+        """
+        metadata = [m for m in self._scene_metadata.all() if self._match_query(m, query)]
+
+        scene_tokens = {m.scene_token for m in metadata}
+        scenes = self._collect(self._scene, scene_tokens)
+
+        samples = self._samples_from_scenes(scenes)
+        sample_datas = self._sample_data_from_samples(samples)
+
+        sample_annotations = self._annotations_from_samples(samples)
+        sample_annotations_2d = self._annotations_from_sample_datas(sample_datas)
+        ins = self._ins_from_samples(samples)
+
+        calibrated_sensors = self._collect(
+            self._calibrated_sensor,
+            {s.calibrated_sensor_token for s in sample_datas},
+        )
+
+        ego_poses = self._collect(
+            self._ego_pose,
+            {s.ego_pose_token for s in sample_datas},
+        )
+
+        instances = self._collect(
+            self._instance,
+            {a.instance_token for a in sample_annotations},
+        )
+
+        instances_2d = self._collect(
+            self._instance_2d,
+            {a.instance_2d_token for a in sample_annotations_2d},
+        )
+
+        filtered = self._clone_empty()
+        filtered.__dict__.update(
+            {
+                "_scene_metadata": RecordCollection(metadata),
+                "_scene": RecordCollection(scenes),
+                "_sample": RecordCollection(samples),
+                "_sample_data": RecordCollection(sample_datas),
+                "_sample_annotation": RecordCollection(sample_annotations),
+                "_sample_annotation_2d": RecordCollection(sample_annotations_2d),
+                "_ins": RecordCollection(ins),
+                "_instance": RecordCollection(instances),
+                "_instance_2d": RecordCollection(instances_2d),
+                "_ego_pose": RecordCollection(ego_poses),
+                "_calibrated_sensor": RecordCollection(calibrated_sensors),
+                "_category": self._category,
+                "_sensor": self._sensor,
+            }
+        )
+
+        return filtered
+
+    def _get_samples_by_scene(self, scene_token: str) -> list[Sample]:
+        scene = self._scene.get(scene_token)
+        samples = [self._sample.get(scene.first_sample_token)]
+        while samples[-1].next != "":
+            samples.append(self._sample.get(samples[-1].next))
+        return samples
+
+    def _get_sample_datas_by_sample(self, sample_token: str) -> list[SampleData]:
+        sample = self._sample.get(sample_token)
+        sample_datas: list[SampleData] = []
+        for sample_data_token in sample.data.values():
+            sample_datas_temp = [self._sample_data.get(sample_data_token)]
+            while (
+                sample_datas_temp[-1].prev != ""
+                and self._sample_data.get(sample_datas_temp[-1].prev).sample_token == sample_token
+            ):
+                sample_datas_temp.append(self._sample_data.get(sample_datas_temp[-1].prev))
+
+            sample_datas_temp = [*sample_datas_temp[1:], sample_datas_temp[0]]
+            while (
+                sample_datas_temp[-1].next != ""
+                and self._sample_data.get(sample_datas_temp[-1].next).sample_token == sample_token
+            ):
+                sample_datas_temp.append(self._sample_data.get(sample_datas_temp[-1].next))
+            sample_datas += sample_datas_temp
+        return sample_datas
+
+    def _get_ins_by_sample(self, sample_token: str) -> list[INS]:
+        sample = self._sample.get(sample_token)
+        ins_data: list[INS] = [self._ins.get(sample.ins_token)]
+        while ins_data[-1].prev != "" and self._ins.get(ins_data[-1].prev).sample_token == sample_token:
+            ins_data.append(self._ins.get(ins_data[-1].prev))
+
+        ins_data = [*ins_data[1:], ins_data[0]]
+        while ins_data[-1].next != "" and self._ins.get(ins_data[-1].next).sample_token == sample_token:
+            ins_data.append(self._ins.get(ins_data[-1].next))
+        return ins_data
+
+    def _collect(self, collection: RecordCollection[T], tokens: set[str]) -> list[T]:
+        return [collection.get(t) for t in tokens]
+
+    def _samples_from_scenes(self, scenes: list[Scene]) -> list[Sample]:
+        samples = []
+        for scene in scenes:
+            samples += self._get_samples_by_scene(scene.token)
+        return samples
+
+    def _sample_data_from_samples(self, samples: list[Sample]) -> list[SampleData]:
+        result = []
+        for sample in samples:
+            result += self._get_sample_datas_by_sample(sample.token)
+        return result
+
+    def _annotations_from_samples(self, samples: list[Sample]) -> list[SampleAnnotation]:
+        anns: list[SampleAnnotation] = []
+        for sample in samples:
+            anns.extend(self._sample_annotation.get(token) for token in sample.anns)
+        return anns
+
+    def _annotations_from_sample_datas(self, sample_datas: list[SampleData]) -> list[SampleAnnotation2D]:
+        anns: list[SampleAnnotation2D] = []
+        for sample_data in sample_datas:
+            anns.extend(self._sample_annotation_2d.get(token) for token in sample_data.anns)
+        return anns
+
+    def _ins_from_samples(self, samples: list[Sample]) -> list[INS]:
+        result = []
+        for sample in samples:
+            result += self._get_ins_by_sample(sample.token)
+        return result
+
+    def _match_query(self, metadata: SceneMetadata, query: dict) -> bool:
+        if not isinstance(query, dict):
+            msg = f"Query {query} is not a dictionary."
+            logger.error(msg)
+            raise KeyError(msg)
+        if len(query.keys()) != 1:
+            msg = f"Query {query} does not have one key."
+            logger.error(msg)
+            raise KeyError(msg)
+        if "and" in query:
+            return self._match_and(metadata, query["and"])
+
+        if "or" in query:
+            return self._match_or(metadata, query["or"])
+
+        if "not" in query:
+            return self._match_not(metadata, query["not"])
+
+        return self._match_fields(metadata, query)
+
+    def _match_and(self, metadata: SceneMetadata, queries: list[dict]) -> bool:
+        return all(self._match_query(metadata, q) for q in queries)
+
+    def _match_or(self, metadata: SceneMetadata, queries: list[dict]) -> bool:
+        return any(self._match_query(metadata, q) for q in queries)
+
+    def _match_not(self, metadata: SceneMetadata, query: dict) -> bool:
+        return not self._match_query(metadata, query)
+
+    def _match_fields(self, metadata: SceneMetadata, query: dict) -> bool:
+        for field, value in query.items():
+            metadata_value = getattr(metadata, field)
+
+            if not self._match_field(metadata_value, value):
+                return False
+
+        return True
+
+    def _match_field(self, metadata_value: MetadataValue, query_value: QueryValue) -> bool:
+        metadata_values = list(metadata_value) if isinstance(metadata_value, tuple) else [metadata_value]
+        query_values = query_value if isinstance(query_value, list) else [query_value]
+
+        for mv in metadata_values:
+            for qv in query_values:
+                if not isinstance(qv, type(mv)):
+                    msg = f"Type mismatch: metadata {mv} has {type(mv).__name__}, query {qv} has {type(qv).__name__}"
+                    logger.error(msg)
+                    raise TypeError(msg)
+        return any(v in metadata_values for v in query_values)
+
+    def _clone_empty(self) -> DARTS:
+        obj = object.__new__(DARTS)
+        obj.__dict__ = self.__dict__.copy()
+
+        for k, v in obj.__dict__.items():
+            if isinstance(v, RecordCollection):
+                obj.__dict__[k] = RecordCollection([])
+
+        return obj
+
     def __repr__(self) -> str:
         """Return a string representation of the DARTS class."""
         return f"DARTS(root={self._root}, version={self._version})"
@@ -189,7 +408,7 @@ class DARTS:
         adding_desc = "Adding data tokens to sample"
         prepare_desc = "Preparing data tokens for sample"
         logger.info(adding_desc)
-        sample_data_by_sample: defaultdict[str, dict[str, str]] = defaultdict(dict)
+        sample_data_by_sample: dict[str, dict[str, str]] = defaultdict(dict)
         sample_data_iterable = self._progress(self._sample_data.all(), prepare_desc, "records")
 
         for sample_data in sample_data_iterable:
@@ -204,7 +423,7 @@ class DARTS:
         adding_desc = "Adding annotation tokens to sample"
         prepare_desc = "Preparing annotation tokens for sample"
         logger.info(adding_desc)
-        sample_annotation_by_sample: defaultdict[str, list[str]] = defaultdict(list)
+        sample_annotation_by_sample: dict[str, list[str]] = defaultdict(list)
         sample_annotation_iterable = self._progress(self._sample_annotation.all(), prepare_desc, "records")
 
         for sample_annotation in sample_annotation_iterable:
@@ -217,7 +436,7 @@ class DARTS:
         adding_desc = "Adding annotation tokens to camera sample data"
         prepare_desc = "Preparing annotation tokens for camera sample data"
         logger.info(adding_desc)
-        sample_annotation_by_sample_data: defaultdict[str, list[str]] = defaultdict(list)
+        sample_annotation_by_sample_data: dict[str, list[str]] = defaultdict(list)
         sample_annotation_2d_iterable = self._progress(self._sample_annotation_2d.all(), prepare_desc, "records")
 
         for sample_annotation_2d in sample_annotation_2d_iterable:

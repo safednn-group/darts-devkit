@@ -532,6 +532,7 @@ class SampleAnnotation(Record):
         translation: 3D position (x, y, z) in meters.
         size: 3D size (width, length, height) in meters.
         rotation: Quaternion rotation (w, x, y, z).
+        score: Score of annotation.
         prev: Token of the previous annotation ("" if none).
         next: Token of the next annotation ("" if none).
         num_lidar_pts: Number of LiDAR points within the bounding box.
@@ -545,6 +546,7 @@ class SampleAnnotation(Record):
     translation: Vec3
     size: Vec3
     rotation: Quaternion
+    score: float
     prev: str
     next: str
     num_lidar_pts: int
@@ -586,6 +588,7 @@ class SampleAnnotation2D(Record):
             If instance does not have 3D annotations instance record will not be present.
         instance_2d_token: Unique identifier for the 2D instance.
         corners: 2D bounding box represented as (min_x, min_y, max_x, max_y).
+        score: Score of 2D annotation.
         prev: Token of the previous 2D annotation ("" if none).
         next: Token of the next 2D annotation ("" if none).
     """
@@ -596,6 +599,7 @@ class SampleAnnotation2D(Record):
     instance_token: str
     instance_2d_token: str
     corners: Corners
+    score: float
     prev: str
     next: str
 
