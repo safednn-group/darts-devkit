@@ -8,3 +8,4 @@ DARTS-devkit API
 
     dataset/index
     evaluation/index
+    visualization/index

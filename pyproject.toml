@@ -21,6 +21,10 @@ dev = [
 
 [project.optional-dependencies]
 
+rerun_visualizer = [
+    "rerun-sdk>=0.31.1",
+    "matplotlib>=3.10.8",
+]
 docs = [
     "sphinx>=8.2.3",
     "sphinxcontrib-mermaid>=2.0.0",
@@ -52,3 +56,6 @@ convention = "google"
 
 [tool.ruff.format]
 docstring-code-format = true
+
+[tool.coverage.run]
+omit = ["*/__init__.py"]

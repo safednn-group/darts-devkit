@@ -2,8 +2,9 @@
 
 import logging
 import darts.evaluation as de
+import darts.visualization as ve
 
-from darts import DARTS, EvaluateRegistry
+from darts import DARTS, EvaluateRegistry, VisualizeRegistry
 logger = logging.getLogger(__name__)
 
 
@@ -27,7 +28,10 @@ def main() -> None:
         {"road_geometry": ["curve", "straight"]}
     ]
     })
-
+    ve.register_rerun_visualizer()
+    visualizer_cls = VisualizeRegistry.get("RerunVisualizer")
+    visualizer = visualizer_cls()
+    visualizer.visualize(darts, "36d2d4317d1847bd87ee94f305bcee8f")
 
 if __name__ == "__main__":
     main()

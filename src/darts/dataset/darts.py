@@ -7,8 +7,11 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
+import PIL.Image
+import PIL.ImageFile
 from tqdm import tqdm
 
+from .data_classes import LidarPointCloud
 from .dataset_models import (
     INS,
     CalibratedSensor,
@@ -152,28 +155,26 @@ class DARTS:
     def filter_scenes(self, query: dict) -> DARTS:
         """Returs DARTS instance with filtered scene based on query with possible NOT, AND, OR operands.
 
+        Args:
+            query: logical query with which we filter records
+        Returns:
+            DARTS instance with filtered records
+
         Example:
         --------
         .. code-block:: python
 
             query = {
-                        "or": [
-                            {"not": {"intersection_y": 1}},
-                            {"traffic_participants": ["trucks", "cyclist"]},
-                        ]
-                    }
+                "or": [
+                    {"not": {"intersection_y": 1}},
+                    {"traffic_participants": ["trucks", "cyclist"]},
+                ]
+            }
 
 
         A list is treated as a disjunction, not a conjunction. It means that at least one of the values of the list
         must be present in the scene metadata. In the example above, a track or a cyclist should be present in the
         recording, not both of them.
-
-
-        Args:
-            query: logical query with which we filter records
-
-        Returns:
-            DARTS instance with filtered records
         """
         metadata = [m for m in self._scene_metadata.all() if self._match_query(m, query)]
 
@@ -183,8 +184,8 @@ class DARTS:
         samples = self._samples_from_scenes(scenes)
         sample_datas = self._sample_data_from_samples(samples)
 
-        sample_annotations = self._annotations_from_samples(samples)
-        sample_annotations_2d = self._annotations_from_sample_datas(sample_datas)
+        sample_annotations = self.get_annotations_from_samples(samples)
+        sample_annotations_2d = self.get_annotations_2d_from_sample_datas(sample_datas)
         ins = self._ins_from_samples(samples)
 
         calibrated_sensors = self._collect(
@@ -228,14 +229,112 @@ class DARTS:
 
         return filtered
 
-    def _get_samples_by_scene(self, scene_token: str) -> list[Sample]:
+    def get_annotations_from_samples(self, samples: list[Sample]) -> list[SampleAnnotation]:
+        """Get annotations from list of samples.
+
+        Args:
+            samples: list of Samples from which to return 3D annotations
+        Returns:
+            list of SampleAnnotation object instances
+        """
+        anns: list[SampleAnnotation] = []
+        for sample in samples:
+            anns.extend(self._sample_annotation.get(token) for token in sample.anns)
+        return anns
+
+    def get_annotations_2d_from_sample_datas(self, sample_datas: list[SampleData]) -> list[SampleAnnotation2D]:
+        """Get 2D annotations from list of camera sample datas.
+
+        Args:
+            sample_datas: list of SampleData from which to return 2D annotations
+        Returns:
+            list of SampleAnnotation2D object instances
+        """
+        anns: list[SampleAnnotation2D] = []
+        for sample_data in sample_datas:
+            if sample_data.modality != "camera":
+                continue
+            anns.extend(self._sample_annotation_2d.get(token) for token in sample_data.anns)
+        return anns
+
+    def get_lidar_pointcloud(self, sample_data: SampleData) -> LidarPointCloud:
+        """Get lidar pointcloud from sample data with lidar modality.
+
+        Args:
+            sample_data: SampleData from which to return LidarPointCloud
+        Returns:
+            LidarPointCloud instance
+        """
+        if sample_data.modality != "lidar":
+            msg = f"Sample data is not of lidar file but {sample_data.modality}"
+            logger.error(msg)
+            raise TypeError(msg)
+        return LidarPointCloud.from_file(self._get_sensor_data_path(sample_data).as_posix())
+
+    def get_image(self, sample_data: SampleData) -> PIL.ImageFile.ImageFile:
+        """Returns image for given camera sample.
+
+        Args:
+            sample_data: camera sample data
+        Returns:
+            image for given camera sample
+        """
+        return PIL.Image.open(self._get_sensor_data_path(sample_data))
+
+    def get_samples_from_scene(self, scene_token: str) -> list[Sample]:
+        """Get samples from scene.
+
+        Args:
+            scene_token: token of scene to get samples from
+        Returns:
+            list of Sample object instances
+        """
         scene = self._scene.get(scene_token)
         samples = [self._sample.get(scene.first_sample_token)]
         while samples[-1].next != "":
             samples.append(self._sample.get(samples[-1].next))
         return samples
 
-    def _get_sample_datas_by_sample(self, sample_token: str) -> list[SampleData]:
+    def get_sensor_from_annotation_2d(self, annotation_2d_token: str) -> Sensor:
+        """Get sensor from 2D annotation.
+
+        Args:
+            annotation_2d_token: token of 2D annotation to get sensor from
+        Returns:
+            Sensor object instance
+        """
+        annotation_2d = self._sample_annotation_2d.get(annotation_2d_token)
+        calibrated_sensor = self._calibrated_sensor.get(annotation_2d.calibrated_sensor_token)
+        return self._sensor.get(calibrated_sensor.sensor_token)
+
+    def get_category_from_annotation_2d(self, annotation_2d_token: str) -> Category:
+        """Get category from 2D annotation.
+
+        Args:
+            annotation_2d_token: token of 2D annotation to get category from
+        Returns:
+            Category object instance
+        """
+        annotation_2d = self._sample_annotation_2d.get(annotation_2d_token)
+        instance_2d = self._instance_2d.get(annotation_2d.instance_2d_token)
+        return self._category.get(instance_2d.category_token)
+
+    def get_category_from_annotation(self, annotation_token: str) -> Category:
+        """Get category from 3D annotation.
+
+        Args:
+            annotation_token: token of 3D annotation to get category from
+        Returns:
+            Category object instance
+        """
+        annotation = self._sample_annotation.get(annotation_token)
+        instance = self._instance.get(annotation.instance_token)
+        return self._category.get(instance.category_token)
+
+    def _get_sensor_data_path(self, sample_data: SampleData) -> Path:
+        return Path(self._root) / str(sample_data.filename)
+
+    def _get_sample_datas_from_sample(self, sample_token: str) -> list[SampleData]:
         sample = self._sample.get(sample_token)
         sample_datas: list[SampleData] = []
         for sample_data_token in sample.data.values():
@@ -255,7 +354,7 @@ class DARTS:
             sample_datas += sample_datas_temp
         return sample_datas
 
-    def _get_ins_by_sample(self, sample_token: str) -> list[INS]:
+    def _get_ins_from_sample(self, sample_token: str) -> list[INS]:
         sample = self._sample.get(sample_token)
         ins_data: list[INS] = [self._ins.get(sample.ins_token)]
         while ins_data[-1].prev != "" and self._ins.get(ins_data[-1].prev).sample_token == sample_token:
@@ -272,31 +371,19 @@ class DARTS:
     def _samples_from_scenes(self, scenes: list[Scene]) -> list[Sample]:
         samples = []
         for scene in scenes:
-            samples += self._get_samples_by_scene(scene.token)
+            samples += self.get_samples_from_scene(scene.token)
         return samples
 
     def _sample_data_from_samples(self, samples: list[Sample]) -> list[SampleData]:
         result = []
         for sample in samples:
-            result += self._get_sample_datas_by_sample(sample.token)
+            result += self._get_sample_datas_from_sample(sample.token)
         return result
-
-    def _annotations_from_samples(self, samples: list[Sample]) -> list[SampleAnnotation]:
-        anns: list[SampleAnnotation] = []
-        for sample in samples:
-            anns.extend(self._sample_annotation.get(token) for token in sample.anns)
-        return anns
-
-    def _annotations_from_sample_datas(self, sample_datas: list[SampleData]) -> list[SampleAnnotation2D]:
-        anns: list[SampleAnnotation2D] = []
-        for sample_data in sample_datas:
-            anns.extend(self._sample_annotation_2d.get(token) for token in sample_data.anns)
-        return anns
 
     def _ins_from_samples(self, samples: list[Sample]) -> list[INS]:
         result = []
         for sample in samples:
-            result += self._get_ins_by_sample(sample.token)
+            result += self._get_ins_from_sample(sample.token)
         return result
 
     def _match_query(self, metadata: SceneMetadata, query: dict) -> bool:
@@ -379,7 +466,7 @@ class DARTS:
     def _get_checksum(self, filename: str) -> str:
         return hashlib.md5((self._root / filename).read_bytes()).hexdigest()
 
-    def _add_channel_to_sample_data(self) -> None:
+    def _add_channel_and_modality_to_sample_data(self) -> None:
         desc = "Adding channel to sample data"
         logger.info(desc)
         iterable = self._progress(self._sample_data.all(), desc, "records")
@@ -387,6 +474,7 @@ class DARTS:
             calibrated_sensor = self._calibrated_sensor.get(sample_data.calibrated_sensor_token)
             sensor = self._sensor.get(calibrated_sensor.sensor_token)
             sample_data.channel = sensor.channel
+            sample_data.modality = sensor.modality
 
     def _add_ins_to_sample(self) -> None:
         desc = "Adding ins token to sample"
@@ -408,35 +496,35 @@ class DARTS:
         adding_desc = "Adding data tokens to sample"
         prepare_desc = "Preparing data tokens for sample"
         logger.info(adding_desc)
-        sample_data_by_sample: dict[str, dict[str, str]] = defaultdict(dict)
+        sample_data_from_sample: dict[str, dict[str, str]] = defaultdict(dict)
         sample_data_iterable = self._progress(self._sample_data.all(), prepare_desc, "records")
 
         for sample_data in sample_data_iterable:
             if not sample_data.is_key_frame:
                 continue
-            sample_data_by_sample[sample_data.sample_token][sample_data.channel] = sample_data.token
+            sample_data_from_sample[sample_data.sample_token][sample_data.channel] = sample_data.token
         sample_iterable = self._progress(self._sample.all(), adding_desc, "records")
         for sample in sample_iterable:
-            sample.data = sample_data_by_sample.get(sample.token, {})
+            sample.data = sample_data_from_sample.get(sample.token, {})
 
     def _add_annotations_to_sample(self) -> None:
         adding_desc = "Adding annotation tokens to sample"
         prepare_desc = "Preparing annotation tokens for sample"
         logger.info(adding_desc)
-        sample_annotation_by_sample: dict[str, list[str]] = defaultdict(list)
+        sample_annotation_from_sample: dict[str, list[str]] = defaultdict(list)
         sample_annotation_iterable = self._progress(self._sample_annotation.all(), prepare_desc, "records")
 
         for sample_annotation in sample_annotation_iterable:
-            sample_annotation_by_sample[sample_annotation.sample_token].append(sample_annotation.token)
+            sample_annotation_from_sample[sample_annotation.sample_token].append(sample_annotation.token)
         sample_iterable = self._progress(self._sample.all(), adding_desc, "records")
         for sample in sample_iterable:
-            sample.anns = str_tuple(sample_annotation_by_sample.get(sample.token, []))
+            sample.anns = str_tuple(sample_annotation_from_sample.get(sample.token, []))
 
     def _add_annotations_to_sample_data(self) -> None:
         adding_desc = "Adding annotation tokens to camera sample data"
         prepare_desc = "Preparing annotation tokens for camera sample data"
         logger.info(adding_desc)
-        sample_annotation_by_sample_data: dict[str, list[str]] = defaultdict(list)
+        sample_annotation_from_sample_data: dict[str, list[str]] = defaultdict(list)
         sample_annotation_2d_iterable = self._progress(self._sample_annotation_2d.all(), prepare_desc, "records")
 
         for sample_annotation_2d in sample_annotation_2d_iterable:
@@ -444,16 +532,16 @@ class DARTS:
             for sample_data_token in sample.data.values():
                 sample_data = self._sample_data.get(sample_data_token)
                 if sample_data.calibrated_sensor_token == sample_annotation_2d.calibrated_sensor_token:
-                    sample_annotation_by_sample_data[sample_data.token].append(sample_annotation_2d.token)
+                    sample_annotation_from_sample_data[sample_data.token].append(sample_annotation_2d.token)
                     break
 
         sample_data_iterable = self._progress(self._sample_data.all(), adding_desc, "records")
         for sample_data in sample_data_iterable:
-            sample_data.anns = str_tuple(sample_annotation_by_sample_data.get(sample_data.token, []))
+            sample_data.anns = str_tuple(sample_annotation_from_sample_data.get(sample_data.token, []))
 
     def _create_relationships(self) -> None:
         logger.info("Creating relationships between tables")
-        self._add_channel_to_sample_data()
+        self._add_channel_and_modality_to_sample_data()
         self._add_scene_metadata_to_scene()
         self._add_ins_to_sample()
         self._add_data_to_sample()

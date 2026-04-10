@@ -15,6 +15,10 @@ def sample_data_record():
         prev="",
         next="",
         ego_pose_token="ep1",
+        modality=None,
+        filename="",
+        width=None,
+        height=None,
     ):
         return SimpleNamespace(
             token=token,
@@ -22,10 +26,14 @@ def sample_data_record():
             calibrated_sensor_token=cal_token,
             ego_pose_token=ego_pose_token,
             channel=channel,
+            modality=modality,
+            filename=filename,
             is_key_frame=key_frame,
             anns=anns,
             prev=prev,
             next=next,
+            width=width,
+            height=height,
         )
 
     return _factory
@@ -33,40 +41,46 @@ def sample_data_record():
 
 @pytest.fixture
 def calibrated_sensor_record():
-    def _factory(token="cs1", sensor_token="sensor1"):
-        return SimpleNamespace(token=token, sensor_token=sensor_token)
+    def _factory(token="cs1", sensor_token="sensor1", translation=None, rotation=None, camera_intrinsic=None):
+        return SimpleNamespace(
+            token=token,
+            sensor_token=sensor_token,
+            translation=translation,
+            rotation=rotation,
+            camera_intrinsic=camera_intrinsic,
+        )
 
     return _factory
 
 
 @pytest.fixture
 def ego_pose_record():
-    def _factory(token="ep1"):
-        return SimpleNamespace(token=token)
+    def _factory(token="ep1", translation=None, rotation=None):
+        return SimpleNamespace(token=token, translation=translation, rotation=rotation)
 
     return _factory
 
 
 @pytest.fixture
 def instance_record():
-    def _factory(token="i1"):
-        return SimpleNamespace(token=token)
+    def _factory(token="i1", category_token=""):
+        return SimpleNamespace(token=token, category_token=category_token)
 
     return _factory
 
 
 @pytest.fixture
 def instance_2d_record():
-    def _factory(token="i2d1"):
-        return SimpleNamespace(token=token)
+    def _factory(token="i2d1", category_token=""):
+        return SimpleNamespace(token=token, category_token=category_token)
 
     return _factory
 
 
 @pytest.fixture
 def sensor_record():
-    def _factory(token="sensor1", channel="CAM_FRONT"):
-        return SimpleNamespace(token=token, channel=channel)
+    def _factory(token="sensor1", channel="CAM_FRONT", modality="camera"):
+        return SimpleNamespace(token=token, channel=channel, modality=modality)
 
     return _factory
 
@@ -107,8 +121,24 @@ def scene_record():
 
 @pytest.fixture
 def sample_annotation_record():
-    def _factory(token="ann1", sample_token="sample1", instance_token="instance1"):
-        return SimpleNamespace(token=token, sample_token=sample_token, instance_token=instance_token)
+    def _factory(
+        token="ann1",
+        sample_token="sample1",
+        instance_token="instance1",
+        calibrated_sensor_token="",
+        size=None,
+        translation=None,
+        rotation=None,
+    ):
+        return SimpleNamespace(
+            token=token,
+            sample_token=sample_token,
+            instance_token=instance_token,
+            calibrated_sensor_token=calibrated_sensor_token,
+            translation=translation,
+            size=size,
+            rotation=rotation,
+        )
 
     return _factory
 
@@ -121,6 +151,7 @@ def sample_annotation_2d_record():
         calibrated_sensor_token="cs1",
         instance_token="instance1",
         instance_2d_token="instance2d1",
+        corners=None,
     ):
         return SimpleNamespace(
             token=token,
@@ -128,7 +159,16 @@ def sample_annotation_2d_record():
             sample_token=sample_token,
             calibrated_sensor_token=calibrated_sensor_token,
             instance_2d_token=instance_2d_token,
+            corners=corners,
         )
+
+    return _factory
+
+
+@pytest.fixture
+def category_record():
+    def _factory(token="cat1", name="name"):
+        return SimpleNamespace(token=token, name=name)
 
     return _factory
 
@@ -193,6 +233,7 @@ def darts_dataset(
         sample_token="sample11",
         cal_token="cs1",
         channel="CAM",
+        modality="camera",
         key_frame=True,
         anns=("ann2d11",),
         prev="",
@@ -204,6 +245,7 @@ def darts_dataset(
         sample_token="sample12",
         cal_token="cs1",
         channel="CAM",
+        modality="camera",
         key_frame=True,
         anns=("ann2d12",),
         prev="",
@@ -215,6 +257,7 @@ def darts_dataset(
         sample_token="sample12",
         cal_token="cs1",
         channel="CAM",
+        modality="camera",
         key_frame=False,
         anns=(),
         prev="sd12",
@@ -227,6 +270,7 @@ def darts_dataset(
         sample_token="sample21",
         cal_token="cs2",
         channel="CAM",
+        modality="camera",
         key_frame=True,
         anns=(),
         prev="",
@@ -238,6 +282,7 @@ def darts_dataset(
         sample_token="sample21",
         cal_token="cs2",
         channel="CAM",
+        modality="camera",
         key_frame=True,
         anns=(),
         prev="sd21",
@@ -249,6 +294,7 @@ def darts_dataset(
         sample_token="sample22",
         cal_token="cs2",
         channel="CAM",
+        modality="camera",
         key_frame=False,
         anns=(),
         prev="",
