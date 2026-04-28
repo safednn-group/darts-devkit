@@ -14,8 +14,9 @@ def test_add_channel_to_sample_data(monkeypatch, sample_data_record, calibrated_
     d._sensor = SimpleNamespace(get=lambda token: sensor)
     monkeypatch.setattr(d, "_progress", lambda iterable, *_: iterable)
 
-    DARTS._add_channel_to_sample_data(d)
+    DARTS._add_channel_and_modality_to_sample_data(d)
     assert sd.channel == sensor.channel
+    assert sd.modality == sensor.modality
 
 
 def test_add_ins_to_sample(monkeypatch, sample_record, ins_record):
@@ -97,7 +98,7 @@ def test_create_relationships(monkeypatch):
     calls = []
 
     for method in [
-        "_add_channel_to_sample_data",
+        "_add_channel_and_modality_to_sample_data",
         "_add_scene_metadata_to_scene",
         "_add_ins_to_sample",
         "_add_data_to_sample",
@@ -108,7 +109,7 @@ def test_create_relationships(monkeypatch):
 
     DARTS._create_relationships(d)
     assert set(calls) == {
-        "_add_channel_to_sample_data",
+        "_add_channel_and_modality_to_sample_data",
         "_add_scene_metadata_to_scene",
         "_add_ins_to_sample",
         "_add_data_to_sample",

@@ -92,8 +92,8 @@ def mat3(values: list[list[float]] | None) -> Mat3 | None:
         return None
     try:
         x_1, x_2, x_3 = values[0]
-        x_4, x_5, x_6 = values[0]
-        x_7, x_8, x_9 = values[0]
+        x_4, x_5, x_6 = values[1]
+        x_7, x_8, x_9 = values[2]
     except ValueError as exc:
         msg = "Expected 3x3 elements"
         raise ValueError(msg) from exc
@@ -641,6 +641,7 @@ class SampleData(Record, Timestamp):
         is_key_frame: Whether this frame is a keyframe.
         checksum: File checksum for integrity verification.
         channel: Sensor channel name (e.g., "RADAR_FRONT_LEFT").
+        modality: Sensor modality (e.g., "radar", "lidar", "camera").
         anns: List of 2D annotations present in this sample data record (only camera channels will have some)
 
     """
@@ -659,6 +660,7 @@ class SampleData(Record, Timestamp):
     is_key_frame: bool
     checksum: str
     channel: str = ""
+    modality: str = ""
     anns: StrTuple = field(default_factory=tuple)
 
 

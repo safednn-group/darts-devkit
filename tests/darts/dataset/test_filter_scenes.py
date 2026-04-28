@@ -76,18 +76,18 @@ def test_ins_from_samples(sample_record, ins_record):
     assert list(ins_map.values()) == DARTS._ins_from_samples(d, [s])
 
 
-def test_annotations_from_sample_datas(sample_data_record, sample_annotation_2d_record):
+def test_get_annotations_2d_from_sample_datas(sample_data_record, sample_annotation_2d_record):
     d = object.__new__(DARTS)
     ann2d1 = sample_annotation_2d_record(token="ann2d1")
     ann2d2 = sample_annotation_2d_record(token="ann2d2")
     ann2d3 = sample_annotation_2d_record(token="ann2d3")
     anns_2d_map = {ann2d1.token: ann2d1, ann2d2.token: ann2d2, ann2d3.token: ann2d3}
-    sd = sample_data_record(anns=list(anns_2d_map.keys()))
+    sd = sample_data_record(anns=list(anns_2d_map.keys()), modality="camera")
     d._sample_annotation_2d = SimpleNamespace(get=lambda token: anns_2d_map[token])
-    assert list(anns_2d_map.values()) == DARTS._annotations_from_sample_datas(d, [sd])
+    assert list(anns_2d_map.values()) == DARTS.get_annotations_2d_from_sample_datas(d, [sd])
 
 
-def test_annotations_from_samples(sample_record, sample_annotation_record):
+def test_get_annotations_from_samples(sample_record, sample_annotation_record):
     d = object.__new__(DARTS)
     ann1 = sample_annotation_record(token="ann2d1")
     ann2 = sample_annotation_record(token="ann2d2")
@@ -95,7 +95,7 @@ def test_annotations_from_samples(sample_record, sample_annotation_record):
     anns_map = {ann1.token: ann1, ann2.token: ann2, ann3.token: ann3}
     s = sample_record(anns=list(anns_map.keys()))
     d._sample_annotation = SimpleNamespace(get=lambda token: anns_map[token])
-    assert list(anns_map.values()) == DARTS._annotations_from_samples(d, [s])
+    assert list(anns_map.values()) == DARTS.get_annotations_from_samples(d, [s])
 
 
 def test_sample_data_from_samples(sample_record, sample_data_record):
@@ -150,6 +150,8 @@ def test_filter_scenes_first(darts_dataset, query):
     assert len(filtered.instance_2d.all()) == 2
     assert len(filtered.ego_pose.all()) == 3
     assert len(filtered.calibrated_sensor.all()) == 1
+    assert len(filtered.category.all()) == 0
+    assert len(filtered.sensor.all()) == 0
 
 
 @pytest.mark.parametrize(
@@ -177,6 +179,8 @@ def test_filter_scenes_second(darts_dataset, query):
     assert len(filtered.instance_2d.all()) == 0
     assert len(filtered.ego_pose.all()) == 3
     assert len(filtered.calibrated_sensor.all()) == 1
+    assert len(filtered.category.all()) == 0
+    assert len(filtered.sensor.all()) == 0
 
 
 def test_filter_scenes_no_results(darts_dataset):
@@ -193,6 +197,8 @@ def test_filter_scenes_no_results(darts_dataset):
     assert len(filtered.instance_2d.all()) == 0
     assert len(filtered.ego_pose.all()) == 0
     assert len(filtered.calibrated_sensor.all()) == 0
+    assert len(filtered.category.all()) == 0
+    assert len(filtered.sensor.all()) == 0
 
 
 def test_filter_scenes_multiple_results(darts_dataset):
@@ -209,3 +215,5 @@ def test_filter_scenes_multiple_results(darts_dataset):
     assert len(filtered.instance_2d.all()) == 2
     assert len(filtered.ego_pose.all()) == 6
     assert len(filtered.calibrated_sensor.all()) == 2
+    assert len(filtered.category.all()) == 0
+    assert len(filtered.sensor.all()) == 0
