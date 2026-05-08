@@ -30,11 +30,8 @@ docs = [
     "sphinxcontrib-mermaid>=2.0.0",
     "sphinx-immaterial>=0.13.9",
 ]
-eval_one = [
-    "mypy>=1.19.1",  # example
-]
-eval_two = [
-    "ruff>=0.15.0",  # example
+waymo_evaluator = [
+    "pyquaternion>=0.9.9",
 ]
 
 [build-system]
@@ -59,3 +56,7 @@ docstring-code-format = true
 
 [tool.coverage.run]
 omit = ["*/__init__.py"]
+
+[[tool.mypy.overrides]]
+module = ["pyquaternion"]
+ignore_missing_imports = true

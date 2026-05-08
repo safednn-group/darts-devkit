@@ -9,17 +9,19 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from darts.dataset.darts import DARTS
+    from darts.dataset.user_models import DARTSAnnotations
 
 
 class EvaluateInterface(ABC):
     """Abstract class/Interface for evaluate method."""
 
     @abstractmethod
-    def evaluate(self, darts: DARTS) -> str:
+    def evaluate(self, darts: DARTS, annotations: DARTSAnnotations) -> str:
         """Abstract method for EvaluateInterface interface.
 
         Args:
             darts: DARTS database
+            annotations: Annotations creted by user
         Returns:
             evaluation results
         """

@@ -185,15 +185,12 @@ docs = [
     { name = "sphinx-immaterial" },
     { name = "sphinxcontrib-mermaid" },
 ]
-eval-one = [
-    { name = "mypy" },
-]
-eval-two = [
-    { name = "ruff" },
-]
 rerun-visualizer = [
     { name = "matplotlib" },
     { name = "rerun-sdk" },
+]
+waymo-evaluator = [
+    { name = "pyquaternion" },
 ]
 
 [package.dev-dependencies]
@@ -210,15 +207,14 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "matplotlib", marker = "extra == 'rerun-visualizer'", specifier = ">=3.10.8" },
-    { name = "mypy", marker = "extra == 'eval-one'", specifier = ">=1.19.1" },
+    { name = "pyquaternion", marker = "extra == 'waymo-evaluator'", specifier = ">=0.9.9" },
     { name = "rerun-sdk", marker = "extra == 'rerun-visualizer'", specifier = ">=0.31.1" },
-    { name = "ruff", marker = "extra == 'eval-two'", specifier = ">=0.15.0" },
     { name = "sphinx", marker = "extra == 'docs'", specifier = ">=8.2.3" },
     { name = "sphinx-immaterial", marker = "extra == 'docs'", specifier = ">=0.13.9" },
     { name = "sphinxcontrib-mermaid", marker = "extra == 'docs'", specifier = ">=2.0.0" },
     { name = "tqdm", specifier = ">=4.67.3" },
 ]
-provides-extras = ["rerun-visualizer", "docs", "eval-one", "eval-two"]
+provides-extras = ["rerun-visualizer", "docs", "waymo-evaluator"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -681,6 +677,18 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/f3/91/9c6ee907786a473bf81c5f53cf703ba0957b23ab84c264080fb5a450416f/pyparsing-3.3.2.tar.gz", hash = "sha256:c777f4d763f140633dcb6d8a3eda953bf7a214dc4eff598413c070bcdc117cbc", size = 6851574, upload-time = "2026-01-21T03:57:59.36Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/10/bd/c038d7cc38edc1aa5bf91ab8068b63d4308c66c4c8bb3cbba7dfbc049f9c/pyparsing-3.3.2-py3-none-any.whl", hash = "sha256:850ba148bd908d7e2411587e247a1e4f0327839c40e2e5e6d05a007ecc69911d", size = 122781, upload-time = "2026-01-21T03:57:55.912Z" },
+]
+
+[[package]]
+name = "pyquaternion"
+version = "0.9.9"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/7d/0d/3d092aa20efaedacb89c3221a92c6491be5b28f618a2c36b52b53e7446c2/pyquaternion-0.9.9.tar.gz", hash = "sha256:b1f61af219cb2fe966b5fb79a192124f2e63a3f7a777ac3cadf2957b1a81bea8", size = 15530, upload-time = "2020-10-05T01:31:30.327Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/49/b3/d8482e8cacc8ea15a356efea13d22ce1c5914a9ee36622ba250523240bf2/pyquaternion-0.9.9-py3-none-any.whl", hash = "sha256:e65f6e3f7b1fdf1a9e23f82434334a1ae84f14223eee835190cd2e841f8172ec", size = 14361, upload-time = "2020-10-05T01:31:37.575Z" },
 ]
 
 [[package]]
