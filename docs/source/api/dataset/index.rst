@@ -10,3 +10,4 @@ core API
     data_classes
     dataset_models
     record_collection
+    user_models

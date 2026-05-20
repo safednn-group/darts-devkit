@@ -20,11 +20,15 @@ from __future__ import annotations
 import logging
 import math
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Annotated
 
+import numpy as np
+from pydantic import BaseModel, Field
 from pyquaternion import Quaternion
+from scipy.optimize import linear_sum_assignment
 
 from darts.dataset.user_models import Box
+from darts.evaluation.registry import ClassResults, Results
 
 from .registry import EvaluateInterface, register_evaluator
 
@@ -109,8 +113,8 @@ class Polygon2D:
         return (idx - 1) % self.number_of_vertices
 
     @staticmethod
-    def from_box(box: Box) -> Polygon2D:
-        """Creates Polygon2D instance from Box instance.
+    def from_box(box: WaymoBox) -> Polygon2D:
+        """Creates Polygon2D instance from WaymoBox instance.
 
         Args:
             box:box
@@ -459,33 +463,201 @@ class Polygon2D:
         return self._area_internal(convex_points)
 
 
+class ClassThresholdConfig(BaseModel):
+    """IoU threshold for a single class."""
+
+    class_name: str
+    iou_threshold: Annotated[float, Field(ge=0.0, le=1.0)]
+
+
+class WaymoEvaluationConfig(BaseModel):
+    """User configuration for Waymo-style evaluation."""
+
+    class_thresholds: list[ClassThresholdConfig]
+    num_score_thresholds: Annotated[int, Field(ge=1)]
+    pr_curve_density: Annotated[float, Field(ge=0.0, le=1.0)]
+    pr_rounding: Annotated[int, Field(ge=0)]
+    min_gt_lidar_points: Annotated[int, Field(ge=0)]
+
+
+class WaymoBox(Box):
+    """WaymoBox."""
+
+    num_lidar_pts: int = -1
+
+
 @register_evaluator("WaymoEvaluator")
-class WaymoEvaluator(EvaluateInterface):
+class WaymoEvaluator(EvaluateInterface[WaymoEvaluationConfig]):
     """WaymoEvaluator class."""
 
-    def evaluate(self, darts: DARTS, annotations: DARTSAnnotations) -> str:
+    def evaluate(self, darts: DARTS, annotations: DARTSAnnotations, config: WaymoEvaluationConfig) -> Results:
         """Evaluate annotations with WaymoEvaluator.
 
         :param darts: DARTS database
         :param annotations: Annotations created by user
         :return: evaluation results
         """
-        gt = darts.sample_annotation.all()[0]
-        for sample_list in annotations.sequences.values():
-            for sample in sample_list:
-                for box in sample.boxes:
-                    logger.info(self._compute_iou(self._sample_annotations_to_box(darts, gt), box))
-        return "END"
+        gts_by_frame, dts_by_frame = self._get_boxes_by_frame(darts, annotations)
+        class_results: list[ClassResults] = []
+        m_ap = 0.0
+        for class_cfg in config.class_thresholds:
+            gts_class_by_frame = [
+                [gt for gt in gts if gt.name == class_cfg.class_name and gt.num_lidar_pts >= config.min_gt_lidar_points]
+                for gts in gts_by_frame
+            ]
+            dts_class_by_frame = [[dt for dt in dts if dt.name == class_cfg.class_name] for dts in dts_by_frame]
+            class_result = self._get_class_result(gts_class_by_frame, dts_class_by_frame, config, class_cfg)
+            class_results.append(class_result)
+            m_ap += class_result.ap
+        m_ap /= len(class_results)
+        return Results(class_results=class_results, m_ap=m_ap)
 
-    def _sample_annotations_to_box(self, darts: DARTS, sample_annotation: SampleAnnotation) -> Box:
+    def _get_class_result(
+        self,
+        gts_class_by_frame: list[list[WaymoBox]],
+        dts_class_by_frame: list[list[WaymoBox]],
+        config: WaymoEvaluationConfig,
+        class_cfg: ClassThresholdConfig,
+    ) -> ClassResults:
+        pr_curve = []
+        thresholds = np.linspace(0.0, 1.0, config.num_score_thresholds)
+        tp_list = []
+        fp_list = []
+        fn_list = []
+        for score_threshold in thresholds:
+            tp = 0
+            fp = 0
+            fn = 0
+
+            for frame_id in range(len(gts_class_by_frame)):
+                gt_class = gts_class_by_frame[frame_id]
+                dt_class = [dt for dt in dts_class_by_frame[frame_id] if dt.score >= score_threshold]
+
+                if len(dt_class) == 0:
+                    fn += len(gt_class)
+                    continue
+
+                if len(gt_class) == 0:
+                    fp += len(dt_class)
+                    continue
+
+                # IoU matrix per frame only
+                iou_matrix = np.zeros((len(dt_class), len(gt_class)), dtype=np.float32)
+
+                for i, dt in enumerate(dt_class):
+                    for j, gt in enumerate(gt_class):
+                        iou_matrix[i, j] = self._compute_iou(dt, gt)
+                print('iou_matrix', iou_matrix)
+                row_ind, col_ind = linear_sum_assignment(-iou_matrix)
+
+                matched_gt = set()
+                matched_dt = set()
+
+                for r, c in zip(row_ind, col_ind, strict=True):
+                    if iou_matrix[r, c] >= class_cfg.iou_threshold:
+                        tp += 1
+                        matched_gt.add(c)
+                        matched_dt.add(r)
+
+                fp += len(dt_class) - len(matched_dt)
+                fn += len(gt_class) - len(matched_gt)
+
+            precision = tp / (tp + fp + K_EPSILON)
+            recall = tp / (tp + fn + K_EPSILON)
+            pr_curve.append((precision, recall))
+            tp_list.append(tp)
+            fp_list.append(fp)
+            fn_list.append(fn)
+        pr_curve = self._sort_and_fill_pr_curve_gaps(pr_curve, config.pr_curve_density, config.pr_rounding)
+        ap = self._calculate_ap(pr_curve, config.pr_rounding)
+        return ClassResults(
+            class_name=class_cfg.class_name, fp_list=fp_list, fn_list=fn_list, tp_list=tp_list, ap=ap, pr_curve=pr_curve
+        )
+
+    def _calculate_ap(self, pr_curve: list[tuple[float, float]], pr_rounding: int) -> float:
+        ap = 0.0
+        for i in range(1, len(pr_curve)):
+            ap += 0.5 * (pr_curve[i - 1][1] - pr_curve[i][1]) * (pr_curve[i - 1][0] + pr_curve[i][0])
+        return round(ap, pr_rounding)
+
+    def _sort_and_fill_pr_curve_gaps(
+        self,
+        pr_curve: list[tuple[float, float]],
+        pr_curve_density: float,
+        pr_rounding: int,
+    ) -> list[tuple[float, float]]:
+
+        if not pr_curve:
+            return []
+
+        # build recall -> precision map
+        recall_precision = {0.0: 1.0}
+
+        for p_, r_ in pr_curve:
+            r = round(r_, pr_rounding)
+            p = round(p_, pr_rounding)
+            recall_precision[r] = max(recall_precision.get(r, 0.0), p)
+
+        # sort by recall DESC
+        items = sorted(recall_precision.items(), key=lambda x: x[0], reverse=True)
+
+        # reverse traversal + gap filling (core logic)
+        precision_recall: list[tuple[float, float]] = []
+
+        last_recall = items[0][0]
+        max_precision = 0.0
+
+        for r, p in items:
+            # Fill recall gaps (Waymo max_recall_delta logic)
+            while last_recall - r > pr_curve_density + K_EPSILON:
+                last_recall -= pr_curve_density
+                precision_recall.append((max_precision, round(last_recall, pr_rounding)))
+
+            max_precision = max(max_precision, p)
+            precision_recall.append((max_precision, r))
+            last_recall = r
+
+        # 4. Final correction step
+        atleast_two = 2
+        if len(precision_recall) >= atleast_two:
+            prev_p = precision_recall[-2][0]
+            last_r = precision_recall[-1][1]
+            precision_recall[-1] = (prev_p, last_r)
+
+        return precision_recall
+
+    def _get_boxes_by_frame(
+        self, darts: DARTS, annotations: DARTSAnnotations
+    ) -> tuple[list[list[WaymoBox]], list[list[WaymoBox]]]:
+        gts_by_frame: list[list[WaymoBox]] = []
+        dts_by_frame: list[list[WaymoBox]] = []
+        for scene_token in annotations.sequences:
+            for sample_idx, sample in enumerate(darts.get_samples_from_scene(scene_token)):
+                gts_by_frame.append(
+                    [
+                        self._sample_annotations_to_waymo_box(darts, gt)
+                        for gt in darts.get_annotations_from_samples([sample])
+                    ]
+                )
+                if annotations.sequences[scene_token][sample_idx].sample_token != sample.token:
+                    msg = "frames are in bad order compared to dataset"
+                    logger.error(msg)
+                    raise IndexError(msg)
+                dts_by_frame.append(
+                    [WaymoBox(**dt.model_dump()) for dt in annotations.sequences[scene_token][sample_idx].boxes]
+                )
+        return gts_by_frame, dts_by_frame
+
+    def _sample_annotations_to_waymo_box(self, darts: DARTS, sample_annotation: SampleAnnotation) -> WaymoBox:
         category = darts.get_category_from_annotation(sample_annotation.token)
-        return Box(
+        return WaymoBox(
             center=list(sample_annotation.translation),
             size=list(sample_annotation.size),
             orientation=list(sample_annotation.rotation),
             name=category.name,
             score=1,
             track_id=1,
+            num_lidar_pts=sample_annotation.num_lidar_pts,
         )
 
     def _closed_ranges_overlap(
@@ -505,7 +677,7 @@ class WaymoEvaluator(EvaluateInterface):
             return True, overlap_min, overlap_max
         return False, overlap_min, overlap_max
 
-    def _compute_iou(self, b1: Box, b2: Box) -> float:
+    def _compute_iou(self, b1: WaymoBox, b2: WaymoBox) -> float:
         for size in b1.size:
             if size < K_MIN_BOX_DIM:
                 return 0.0

@@ -17,6 +17,7 @@ dev = [
     "pytest>=9.0.2",
     "pytest-cov>=7.0.0",
     "pytest-random-order>=1.2.0",
+    "scipy-stubs>=1.17.1.4",
 ]
 
 [project.optional-dependencies]
@@ -32,6 +33,7 @@ docs = [
 ]
 waymo_evaluator = [
     "pyquaternion>=0.9.9",
+    "scipy>=1.17.1",
 ]
 
 [build-system]
@@ -46,6 +48,7 @@ select = ["ALL"]
 ignore = [
   "COM812",  # Formatter conflicts
   "S324",   # Probable use of insecure hash functions in `hashlib`: `md5`
+  "UP046",
 ]
 
 [tool.ruff.lint.pydocstyle]

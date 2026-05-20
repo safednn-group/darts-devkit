@@ -7,5 +7,4 @@ evaluate API
     :glob:
 
     registry
-    eval_one
-    eval_two
+    waymo_evaluator
