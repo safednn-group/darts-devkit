@@ -16,7 +16,6 @@ class Box(BaseModel):
     orientation: Annotated[list[Annotated[float, Field(ge=-1, le=1)]], Len(min_length=4, max_length=4)]
     name: str
     score: Annotated[float, Field(ge=0.0, le=1.0)]
-    track_id: Annotated[int, Field(ge=0)]
     model_config = ConfigDict(extra="forbid")
 
 

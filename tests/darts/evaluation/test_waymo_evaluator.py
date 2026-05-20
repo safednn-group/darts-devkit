@@ -9,7 +9,7 @@ from darts.dataset.darts import DARTS
 def make_box(center, size, yaw=0.0, name="box", score=1):
     q = Quaternion(axis=[0, 0, 1], angle=yaw)
 
-    return Box(center=center, size=size, orientation=[q.w, q.x, q.y, q.z], track_id=1, score=score, name=name)
+    return Box(center=center, size=size, orientation=[q.w, q.x, q.y, q.z], score=score, name=name)
 
 
 def make_darts(
@@ -141,7 +141,7 @@ def make_darts(
         ),
         pytest.param(
             make_box([0, 0, 0], [1, 1, 1]),
-            make_box([0.3, 0, 0], [1, 1, 1]),
+            make_box([0.333333333333333334, 0, 0], [1, 1, 1]),
             0.5,
             id="small_move",
         ),
@@ -149,8 +149,10 @@ def make_darts(
 )
 def test_compute_iou(b1, b2, expected):
     evaluator = WaymoEvaluator()
-    assert evaluator._compute_iou(b1, b2) == pytest.approx(expected)
-    assert evaluator._compute_iou(b2, b1) == pytest.approx(expected)
+    p1 = evaluator._box_to_waymo_box(b1)
+    p2 = evaluator._box_to_waymo_box(b2)
+    assert evaluator._compute_iou(p1, p2) == pytest.approx(expected)
+    assert evaluator._compute_iou(p2, p1) == pytest.approx(expected)
 
 
 @pytest.mark.parametrize(
@@ -247,13 +249,13 @@ def test_compute_iou(b1, b2, expected):
                     "sample": "s1",
                     "boxes": [
                         {
-                            "center": [0.3, 0, 0],
+                            "center": [0.34, 0, 0],
                             "name": "car",
                         },
                     ],
                 }
             ],
-            0.5,
+            0.0,
             id="one_missed_one_thhreshold_detection",
         ),
     ],
@@ -317,5 +319,4 @@ def test_evaluate(
         annotations=annotations,
         config=config,
     )
-    assert results == 0
     assert results.m_ap == expected_ap
