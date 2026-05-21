@@ -258,6 +258,78 @@ def test_compute_iou(b1, b2, expected):
             0.0,
             id="one_missed_one_thhreshold_detection",
         ),
+        pytest.param(
+            [
+                {
+                    "sample": "s1",
+                    "boxes": [
+                        {
+                            "instance": "car_1",
+                            "center": [0, 0, 0],
+                            "name": "car",
+                        },
+                        {
+                            "instance": "pedestrian_1",
+                            "center": [10, 0, 0],
+                            "name": "pedestrian",
+                        },
+                    ],
+                }
+            ],
+            [
+                {
+                    "sample": "s1",
+                    "boxes": [
+                        {
+                            "center": [0, 0, 0],
+                            "name": "car",
+                        },
+                        {
+                            "center": [10, 0, 0],
+                            "name": "pedestrian",
+                        },
+                    ],
+                }
+            ],
+            1.0,
+            id="two_gt_two_tp_two_classes",
+        ),
+        pytest.param(
+            [
+                {
+                    "sample": "s1",
+                    "boxes": [
+                        {
+                            "instance": "car_1",
+                            "center": [0, 0, 0],
+                            "name": "car",
+                        },
+                        {
+                            "instance": "pedestrian_1",
+                            "center": [10, 0, 0],
+                            "name": "pedestrian",
+                        },
+                    ],
+                }
+            ],
+            [
+                {
+                    "sample": "s1",
+                    "boxes": [
+                        {
+                            "center": [0, 0, 0],
+                            "name": "car",
+                        },
+                        {
+                            "center": [10, 0, 0],
+                            "name": "car",
+                        },
+                    ],
+                }
+            ],
+            0.25,
+            id="two_gt_one_tp_two_classes",
+        ),
     ],
 )
 def test_evaluate(
@@ -271,13 +343,14 @@ def test_evaluate(
     expected_ap,
 ):
     evaluator = WaymoEvaluator()
-
+    class_names = (box["name"] for gt_frame in gt_frames for box in gt_frame["boxes"])
     config = WaymoEvaluationConfig(
         class_thresholds=[
             ClassThresholdConfig(
-                class_name="car",
+                class_name=name,
                 iou_threshold=0.5,
             )
+            for name in class_names
         ],
         num_score_thresholds=3,
         pr_curve_density=0.05,
