@@ -17,20 +17,20 @@ default:
 check-job:
   stage: check
   tags: 
-    - mimas
+    - anton
   script:
     - make check
 
 test-job:
   stage: test
   tags:
-    - mimas
+    - anton
   script:
     - make test
 
 docs-job:
   stage: docs
   tags:
-    - mimas
+    - anton
   script:
     - make docs
