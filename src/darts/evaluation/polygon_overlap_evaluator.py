@@ -1,4 +1,4 @@
-"""DARTS evaluation based on The Waymo Open Dataset."""
+"""DARTS evaluation method."""
 
 from __future__ import annotations
 
@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Annotated
 
 import numpy as np
+import numpy.typing as npt
 from pydantic import BaseModel, Field
 from pyquaternion import Quaternion
 from scipy.optimize import linear_sum_assignment
@@ -20,7 +21,7 @@ from .registry import EvaluateInterface, register_evaluator
 if TYPE_CHECKING:
     from darts.dataset.darts import DARTS
     from darts.dataset.dataset_models import SampleAnnotation
-    from darts.dataset.user_models import Box, DARTSAnnotations
+    from darts.evaluation.evaluation_models import Box, DARTSAnnotations
 
 K_EPSILON = 1e-10
 K_MIN_BOX_DIM = 1e-2
@@ -28,25 +29,34 @@ logger = logging.getLogger(__name__)
 
 
 class ClassThresholdConfig(BaseModel):
-    """IoU threshold for a single class."""
+    """IoU threshold for a single class.
+
+    If IOU between detection and ground truth in this class is less than iou_threshold
+    then such pairing is not taken into account during global IOU maximalization.
+    """
 
     class_name: str
     iou_threshold: Annotated[float, Field(ge=0.0, le=1.0)]
 
 
-class WaymoEvaluationConfig(BaseModel):
-    """User configuration for Waymo-style evaluation."""
+class PolygonOverlaEvaluationConfig(BaseModel):
+    """User configuration for evaluation."""
 
     class_thresholds: list[ClassThresholdConfig]
+    """List of ClassThresholdConfig. Only ap of classes given in this list are computed."""
     num_score_thresholds: Annotated[int, Field(ge=1)]
+    """Number of evenly spaced score thresholds for detections."""
     pr_curve_density: Annotated[float, Field(ge=0.0, le=1.0)]
+    """How dense pr curve should be or recall axis."""
     pr_rounding: Annotated[int, Field(ge=0)]
+    """Rounding point of various results during calculation pr_curve and ap."""
     min_gt_lidar_points: Annotated[int, Field(ge=0)]
+    """Minumum number of lidar points inside ground truth box for it to be taken into account."""
 
 
 @dataclass
-class WaymoBox:
-    """WaymoBox."""
+class PolygonEvalBox:
+    """PolygonEvalBox."""
 
     name: str
     polygon: Polygon
@@ -61,12 +71,61 @@ class WaymoBox:
     score: float
 
 
-@register_evaluator("WaymoEvaluator")
-class WaymoEvaluator(EvaluateInterface[WaymoEvaluationConfig]):
-    """WaymoEvaluator class."""
+@register_evaluator("PolygonOverlapEvaluator")
+class PolygonOverlapEvaluator(EvaluateInterface[PolygonOverlaEvaluationConfig]):
+    """PolygonOverlapEvaluator class.
 
-    def evaluate(self, darts: DARTS, annotations: DARTSAnnotations, config: WaymoEvaluationConfig) -> Results:
-        """Evaluate annotations with WaymoEvaluator.
+    Evaluation overview
+    -------------------
+    - Evaluates 3D object detection quality using volumetric IoU between predicted and
+      ground-truth oriented bounding boxes.
+    - IoU is computed from Shapely polygon intersection in the BEV plane and box height overlap (Z axis).
+    - Detections are matched to ground truths per frame using Hungarian matching on the IoU matrix.
+    - Matches with IoU above the configured threshold are counted as TP, while unmatched boxes become FP/FN.
+    - Precision/Recall curves are generated across score thresholds and AP is computed as the PR curve area.
+    - Final metric (`mAP`) is the mean AP across all configured classes.
+
+    Example:
+    --------
+    .. code-block:: python
+
+        import darts.evaluation as ev
+        import json
+
+        from darts import DARTS, EvaluateRegistry
+        from darts.evaluation.evaluation_models import DARTSAnnotations
+        from darts.evaluation.polygon_overlap_evaluator import PolygonOverlaEvaluationConfig, ClassThresholdConfig
+
+        darts = DARTS("/data", "v_00001")
+
+        ev.register_polygon_overlap_evaluator()
+
+        with open("annotations.json", "r") as file:
+            data = json.load(file)
+
+        annotations = DARTSAnnotations(**data)
+
+        evaluator_cls = EvaluateRegistry.get("PolygonOverlapEvaluator")
+        evaluator = evaluator_cls()
+
+        config = PolygonOverlaEvaluationConfig(
+            class_thresholds=[
+                ClassThresholdConfig(
+                    class_name="multi_track_vehicle.car",
+                    iou_threshold=0.7,
+                )
+            ],
+            num_score_thresholds=10,
+            pr_curve_density=0.05,
+            pr_rounding=6,
+            min_gt_lidar_points=0,
+        )
+
+        results = evaluator.evaluate(darts, annotations, config)
+    """
+
+    def evaluate(self, darts: DARTS, annotations: DARTSAnnotations, config: PolygonOverlaEvaluationConfig) -> Results:
+        """Evaluate annotations with PolygonOverlapEvaluator.
 
         :param darts: DARTS database
         :param annotations: Annotations created by user
@@ -89,16 +148,17 @@ class WaymoEvaluator(EvaluateInterface[WaymoEvaluationConfig]):
 
     def _get_class_result(
         self,
-        gts_class_by_frame: list[list[WaymoBox]],
-        dts_class_by_frame: list[list[WaymoBox]],
-        config: WaymoEvaluationConfig,
+        gts_class_by_frame: list[list[PolygonEvalBox]],
+        dts_class_by_frame: list[list[PolygonEvalBox]],
+        config: PolygonOverlaEvaluationConfig,
         class_cfg: ClassThresholdConfig,
     ) -> ClassResults:
         pr_curve = []
-        thresholds = np.linspace(0.0, 1.0, config.num_score_thresholds)
+        thresholds: list[float] = list(np.linspace(0.0, 1.0, config.num_score_thresholds))
         tp_list = []
         fp_list = []
         fn_list = []
+        iou_cache = self._get_iou_cache(gts_class_by_frame, dts_class_by_frame, class_cfg.iou_threshold)
         for score_threshold in thresholds:
             tp = 0
             fp = 0
@@ -106,8 +166,14 @@ class WaymoEvaluator(EvaluateInterface[WaymoEvaluationConfig]):
 
             for frame_id in range(len(gts_class_by_frame)):
                 gt_class = gts_class_by_frame[frame_id]
-                dt_class = [dt for dt in dts_class_by_frame[frame_id] if dt.score >= score_threshold]
+                dt_array = np.asarray(dts_class_by_frame[frame_id], dtype=object)
 
+                dt_mask = np.fromiter(
+                    (dt.score >= score_threshold for dt in dt_array),
+                    dtype=np.bool_,
+                )
+
+                dt_class = dt_array[dt_mask]
                 if len(dt_class) == 0:
                     fn += len(gt_class)
                     continue
@@ -116,14 +182,7 @@ class WaymoEvaluator(EvaluateInterface[WaymoEvaluationConfig]):
                     fp += len(dt_class)
                     continue
 
-                # IoU matrix per frame only
-                iou_matrix = np.zeros((len(dt_class), len(gt_class)), dtype=np.float32)
-
-                for i, dt in enumerate(dt_class):
-                    for j, gt in enumerate(gt_class):
-                        iou = self._compute_iou(dt, gt)
-                        if iou >= class_cfg.iou_threshold:
-                            iou_matrix[i, j] = iou
+                iou_matrix: npt.NDArray[np.float32] = iou_cache[frame_id][dt_mask, :]
                 row_ind, col_ind = linear_sum_assignment(-iou_matrix)
 
                 matched_gt = set()
@@ -149,6 +208,24 @@ class WaymoEvaluator(EvaluateInterface[WaymoEvaluationConfig]):
         return ClassResults(
             class_name=class_cfg.class_name, fp_list=fp_list, fn_list=fn_list, tp_list=tp_list, ap=ap, pr_curve=pr_curve
         )
+
+    def _get_iou_cache(
+        self,
+        gts_class_by_frame: list[list[PolygonEvalBox]],
+        dts_class_by_frame: list[list[PolygonEvalBox]],
+        iou_threshold: float,
+    ) -> list[npt.NDArray[np.float32]]:
+        iou_cache: list[npt.NDArray[np.float32]] = []
+        for frame_id in range(len(gts_class_by_frame)):
+            gt_class = gts_class_by_frame[frame_id]
+            dt_class = dts_class_by_frame[frame_id]
+            iou_cache.append(np.zeros((len(dt_class), len(gt_class)), dtype=np.float32))
+            for i, dt in enumerate(dt_class):
+                for j, gt in enumerate(gt_class):
+                    iou = self._compute_iou(dt, gt)
+                    if iou >= iou_threshold:
+                        iou_cache[frame_id][i, j] = iou
+        return iou_cache
 
     def _calculate_ap(self, pr_curve: list[tuple[float, float]], pr_rounding: int) -> float:
         ap = 0.0
@@ -184,7 +261,7 @@ class WaymoEvaluator(EvaluateInterface[WaymoEvaluationConfig]):
         max_precision = 0.0
 
         for r, p in items:
-            # Fill recall gaps (Waymo max_recall_delta logic)
+            # Fill recall gaps (max_recall_delta logic)
             while last_recall - r > pr_curve_density + K_EPSILON:
                 last_recall -= pr_curve_density
                 precision_recall.append((max_precision, round(last_recall, pr_rounding)))
@@ -204,14 +281,14 @@ class WaymoEvaluator(EvaluateInterface[WaymoEvaluationConfig]):
 
     def _get_boxes_by_frame(
         self, darts: DARTS, annotations: DARTSAnnotations
-    ) -> tuple[list[list[WaymoBox]], list[list[WaymoBox]]]:
-        gts_by_frame: list[list[WaymoBox]] = []
-        dts_by_frame: list[list[WaymoBox]] = []
+    ) -> tuple[list[list[PolygonEvalBox]], list[list[PolygonEvalBox]]]:
+        gts_by_frame: list[list[PolygonEvalBox]] = []
+        dts_by_frame: list[list[PolygonEvalBox]] = []
         for scene_token in annotations.sequences:
             for sample_idx, sample in enumerate(darts.get_samples_from_scene(scene_token)):
                 gts_by_frame.append(
                     [
-                        self._sample_annotation_to_waymo_box(darts, gt)
+                        self._sample_annotation_to_polygon_eval_box(darts, gt)
                         for gt in darts.get_annotations_from_samples([sample])
                     ]
                 )
@@ -220,15 +297,15 @@ class WaymoEvaluator(EvaluateInterface[WaymoEvaluationConfig]):
                     logger.error(msg)
                     raise IndexError(msg)
                 dts_by_frame.append(
-                    [self._box_to_waymo_box(dt) for dt in annotations.sequences[scene_token][sample_idx].boxes]
+                    [self._box_to_polygon_eval_box(dt) for dt in annotations.sequences[scene_token][sample_idx].boxes]
                 )
         return gts_by_frame, dts_by_frame
 
-    def _box_to_waymo_box(self, box: Box) -> WaymoBox:
+    def _box_to_polygon_eval_box(self, box: Box) -> PolygonEvalBox:
         polygon, x_min, x_max, y_min, y_max = self._to_polygon(
             translation=box.center, size=box.size, rotation=box.orientation
         )
-        return WaymoBox(
+        return PolygonEvalBox(
             name=box.name,
             polygon=polygon,
             size=box.size,
@@ -242,13 +319,15 @@ class WaymoEvaluator(EvaluateInterface[WaymoEvaluationConfig]):
             num_lidar_pts=-1,
         )
 
-    def _sample_annotation_to_waymo_box(self, darts: DARTS, sample_annotation: SampleAnnotation) -> WaymoBox:
+    def _sample_annotation_to_polygon_eval_box(
+        self, darts: DARTS, sample_annotation: SampleAnnotation
+    ) -> PolygonEvalBox:
         polygon, x_min, x_max, y_min, y_max = self._to_polygon(
             translation=list(sample_annotation.translation),
             size=list(sample_annotation.size),
             rotation=list(sample_annotation.rotation),
         )
-        return WaymoBox(
+        return PolygonEvalBox(
             name=darts.get_category_from_annotation(sample_annotation.token).name,
             polygon=polygon,
             size=list(sample_annotation.size),
@@ -298,7 +377,7 @@ class WaymoEvaluator(EvaluateInterface[WaymoEvaluationConfig]):
         y_max = max(y for _, y in pts)
         return Polygon(pts), x_min, x_max, y_min, y_max
 
-    def _probable_overlap(self, b1: WaymoBox, b2: WaymoBox) -> bool:
+    def _probable_overlap(self, b1: PolygonEvalBox, b2: PolygonEvalBox) -> bool:
 
         overlap_min_z = max(b1.z_min, b2.z_min)
         overlap_max_z = min(b1.z_max, b2.z_max)
@@ -316,7 +395,7 @@ class WaymoEvaluator(EvaluateInterface[WaymoEvaluationConfig]):
         overlap_exists_y = overlap_min_y <= overlap_max_y
         return overlap_exists_x and overlap_exists_y and overlap_exists_z
 
-    def _compute_iou(self, b1: WaymoBox, b2: WaymoBox) -> float:
+    def _compute_iou(self, b1: PolygonEvalBox, b2: PolygonEvalBox) -> float:
         for size in b1.size:
             if size < K_MIN_BOX_DIM:
                 return 0.0

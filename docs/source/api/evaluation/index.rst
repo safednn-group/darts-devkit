@@ -7,4 +7,5 @@ evaluate API
     :glob:
 
     registry
-    waymo_evaluator
+    polygon_overlap_evaluator
+    evaluation_models

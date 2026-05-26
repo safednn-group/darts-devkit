@@ -1,10 +1,10 @@
 """Methods to register classes that inherit from EvaluateInterface."""
 
 
-def register_waymo_evaluator() -> None:
-    """Register WaymoEvaluator if installed."""
+def register_polygon_overlap_evaluator() -> None:
+    """Register PolygonOverlapEvaluator if installed."""
     try:
-        from .waymo_evaluator import WaymoEvaluator  # noqa: F401 PLC0415
+        from .polygon_overlap_evaluator import PolygonOverlapEvaluator  # noqa: F401 PLC0415
     except ImportError as e:
-        msg = "WaymoEvaluator is not installed. Install with `uv pip install darts[waymo_evaluator]`"
+        msg = "PolygonOverlapEvaluator is not installed. Install with `uv pip install darts[polygon_overlap_evaluator]`"
         raise RuntimeError(msg) from e

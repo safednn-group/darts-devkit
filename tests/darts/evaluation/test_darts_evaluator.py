@@ -1,8 +1,12 @@
 import pytest
 from pyquaternion import Quaternion
 from types import SimpleNamespace
-from darts.evaluation.waymo_evaluator import WaymoEvaluator, WaymoEvaluationConfig, ClassThresholdConfig
-from darts.dataset.user_models import Box, Frame, DARTSAnnotations
+from darts.evaluation.polygon_overlap_evaluator import (
+    PolygonOverlapEvaluator,
+    PolygonOverlaEvaluationConfig,
+    ClassThresholdConfig,
+)
+from darts.evaluation.evaluation_models import Box, Frame, DARTSAnnotations
 from darts.dataset.darts import DARTS
 
 
@@ -148,9 +152,9 @@ def make_darts(
     ],
 )
 def test_compute_iou(b1, b2, expected):
-    evaluator = WaymoEvaluator()
-    p1 = evaluator._box_to_waymo_box(b1)
-    p2 = evaluator._box_to_waymo_box(b2)
+    evaluator = PolygonOverlapEvaluator()
+    p1 = evaluator._box_to_polygon_eval_box(b1)
+    p2 = evaluator._box_to_polygon_eval_box(b2)
     assert evaluator._compute_iou(p1, p2) == pytest.approx(expected)
     assert evaluator._compute_iou(p2, p1) == pytest.approx(expected)
 
@@ -342,9 +346,9 @@ def test_evaluate(
     pred_frames,
     expected_ap,
 ):
-    evaluator = WaymoEvaluator()
+    evaluator = PolygonOverlapEvaluator()
     class_names = (box["name"] for gt_frame in gt_frames for box in gt_frame["boxes"])
-    config = WaymoEvaluationConfig(
+    config = PolygonOverlaEvaluationConfig(
         class_thresholds=[
             ClassThresholdConfig(
                 class_name=name,
