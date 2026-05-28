@@ -9,17 +9,43 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from darts.dataset.darts import DARTS
+    from darts.evaluation.evaluation_models import DARTSAnnotations
+from typing import Generic, TypeVar
+
+from pydantic import BaseModel
+
+C = TypeVar("C", bound=BaseModel)
 
 
-class EvaluateInterface(ABC):
+class ClassResults(BaseModel):
+    """Class for keeping ap results of one class."""
+
+    class_name: str
+    fp_list: list[int]
+    fn_list: list[int]
+    tp_list: list[int]
+    ap: float
+    pr_curve: list[tuple[float, float]]
+
+
+class Results(BaseModel):
+    """Class for aggregating ap results."""
+
+    class_results: list[ClassResults]
+    m_ap: float
+
+
+class EvaluateInterface(ABC, Generic[C]):
     """Abstract class/Interface for evaluate method."""
 
     @abstractmethod
-    def evaluate(self, darts: DARTS) -> str:
+    def evaluate(self, darts: DARTS, annotations: DARTSAnnotations, config: C) -> Results:
         """Abstract method for EvaluateInterface interface.
 
         Args:
             darts: DARTS database
+            annotations: Annotations creted by user
+            config: needed config for evaluator
         Returns:
             evaluation results
         """

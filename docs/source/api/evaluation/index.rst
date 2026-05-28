@@ -7,5 +7,5 @@ evaluate API
     :glob:
 
     registry
-    eval_one
-    eval_two
+    polygon_overlap_evaluator
+    evaluation_models

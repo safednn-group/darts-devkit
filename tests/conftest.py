@@ -129,6 +129,8 @@ def sample_annotation_record():
         size=None,
         translation=None,
         rotation=None,
+        num_lidar_pts=10,
+        score=1,
     ):
         return SimpleNamespace(
             token=token,
@@ -138,6 +140,8 @@ def sample_annotation_record():
             translation=translation,
             size=size,
             rotation=rotation,
+            num_lidar_pts=num_lidar_pts,
+            score=score,
         )
 
     return _factory
