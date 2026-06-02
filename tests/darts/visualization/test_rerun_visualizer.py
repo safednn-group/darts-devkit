@@ -1,8 +1,8 @@
 import pytest
 from types import SimpleNamespace
 
-from darts import DARTS
-from darts.visualization.rerun_visualizer import RerunVisualizer
+from darts_devkit import DARTS
+from darts_devkit.visualization.rerun_visualizer import RerunVisualizer
 import numpy as np
 
 

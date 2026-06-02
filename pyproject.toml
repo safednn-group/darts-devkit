@@ -1,9 +1,16 @@
 [project]
-name = "darts"
+name = "darts-devkit"
 version = "0.1.0"
-description = "darts_devkit"
+description = "devkit for DARTS database"
 readme = "README.md"
 requires-python = "==3.14.*"
+classifiers = [
+    "Programming Language :: Python :: 3"
+]
+license = "MIT"
+license-files = ["LICENSE.md"]
+
+
 dependencies = [
     "tqdm>=4.67.3",
 ]

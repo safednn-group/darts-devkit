@@ -14,14 +14,14 @@ from pyquaternion import Quaternion
 from scipy.optimize import linear_sum_assignment
 from shapely.geometry import Polygon
 
-from darts.evaluation.registry import ClassResults, Results
+from darts_devkit.evaluation.registry import ClassResults, Results
 
 from .registry import EvaluateInterface, register_evaluator
 
 if TYPE_CHECKING:
-    from darts.dataset.darts import DARTS
-    from darts.dataset.dataset_models import SampleAnnotation
-    from darts.evaluation.evaluation_models import Box, DARTSAnnotations
+    from darts_devkit.dataset.darts import DARTS
+    from darts_devkit.dataset.dataset_models import SampleAnnotation
+    from darts_devkit.evaluation.evaluation_models import Box, DARTSAnnotations
 
 K_EPSILON = 1e-10
 K_MIN_BOX_DIM = 1e-2

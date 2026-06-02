@@ -14,9 +14,9 @@ from .registry import VisualizeInterface, register_visualizer
 if TYPE_CHECKING:
     import PIL.ImageFile
 
-    from darts.dataset.darts import DARTS
-    from darts.dataset.data_classes import LidarPointCloud
-    from darts.dataset.dataset_models import Sample, SampleAnnotation, SampleAnnotation2D, SampleData
+    from darts_devkit.dataset.darts import DARTS
+    from darts_devkit.dataset.data_classes import LidarPointCloud
+    from darts_devkit.dataset.dataset_models import Sample, SampleAnnotation, SampleAnnotation2D, SampleData
 import matplotlib as mpl
 import rerun as rr
 

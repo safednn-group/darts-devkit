@@ -172,7 +172,7 @@ wheels = [
 ]
 
 [[package]]
-name = "darts"
+name = "darts-devkit"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [

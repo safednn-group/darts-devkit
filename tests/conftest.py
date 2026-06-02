@@ -1,5 +1,5 @@
 from types import SimpleNamespace
-from darts import DARTS
+from darts_devkit import DARTS
 import pytest
 
 

@@ -8,8 +8,8 @@ from typing import TYPE_CHECKING, ClassVar
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from darts.dataset.darts import DARTS
-    from darts.evaluation.evaluation_models import DARTSAnnotations
+    from darts_devkit.dataset.darts import DARTS
+    from darts_devkit.evaluation.evaluation_models import DARTSAnnotations
 from typing import Generic, TypeVar
 
 from pydantic import BaseModel

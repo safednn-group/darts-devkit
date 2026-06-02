@@ -1,13 +1,13 @@
 import pytest
 from pyquaternion import Quaternion
 from types import SimpleNamespace
-from darts.evaluation.polygon_overlap_evaluator import (
+from darts_devkit.evaluation.polygon_overlap_evaluator import (
     PolygonOverlapEvaluator,
     PolygonOverlaEvaluationConfig,
     ClassThresholdConfig,
 )
-from darts.evaluation.evaluation_models import Box, Frame, DARTSAnnotations
-from darts.dataset.darts import DARTS
+from darts_devkit.evaluation.evaluation_models import Box, Frame, DARTSAnnotations
+from darts_devkit.dataset.darts import DARTS
 
 
 def make_box(center, size, yaw=0.0, name="box", score=1):

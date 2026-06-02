@@ -1,13 +1,13 @@
 """Main module for testing purposes."""
 
 import logging
-import darts.evaluation as ev
+import darts_devkit.evaluation as ev
 import json
 import cProfile
 import pstats
-from darts import DARTS, EvaluateRegistry
-from darts.evaluation.evaluation_models import DARTSAnnotations
-from darts.evaluation.polygon_overlap_evaluator import PolygonOverlaEvaluationConfig, ClassThresholdConfig
+from darts_devkit import DARTS, EvaluateRegistry
+from darts_devkit.evaluation.evaluation_models import DARTSAnnotations
+from darts_devkit.evaluation.polygon_overlap_evaluator import PolygonOverlaEvaluationConfig, ClassThresholdConfig
 logger = logging.getLogger(__name__)
 
 

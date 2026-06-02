@@ -1,8 +1,8 @@
 import sys
 from pathlib import Path
 
-import darts
-from darts import DARTS
+import darts_devkit
+from darts_devkit import DARTS
 
 
 def test_init_sets_root_and_version(monkeypatch):
@@ -20,7 +20,7 @@ def test_init_show_progress(monkeypatch):
 
     def make_instance(isatty_return, logger_return):
         monkeypatch.setattr(sys.stderr, "isatty", lambda: isatty_return)
-        monkeypatch.setattr(darts.dataset.darts.logger, "isEnabledFor", lambda level: logger_return)
+        monkeypatch.setattr(darts_devkit.dataset.darts.logger, "isEnabledFor", lambda level: logger_return)
         return DARTS("data", "v1")
 
     # Test all combinations
