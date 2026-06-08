@@ -173,10 +173,12 @@ wheels = [
 
 [[package]]
 name = "darts-devkit"
-version = "0.1.5"
+version = "1.0.0"
 source = { editable = "." }
 dependencies = [
+    { name = "numpy" },
     { name = "pillow" },
+    { name = "pydantic" },
     { name = "tqdm" },
 ]
 
@@ -212,7 +214,9 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "matplotlib", marker = "extra == 'rerun-visualizer'", specifier = ">=3.10.8" },
+    { name = "numpy", specifier = ">=2.4.4" },
     { name = "pillow", specifier = ">=12.2.0" },
+    { name = "pydantic", specifier = ">=2.12.5" },
     { name = "pyquaternion", marker = "extra == 'polygon-overlap-evaluator'", specifier = ">=0.9.9" },
     { name = "rerun-sdk", marker = "extra == 'rerun-visualizer'", specifier = ">=0.31.1" },
     { name = "scipy", marker = "extra == 'polygon-overlap-evaluator'", specifier = ">=1.17.1" },

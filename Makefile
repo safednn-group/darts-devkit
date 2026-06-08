@@ -11,7 +11,7 @@ check: lint
 	uv run mypy src/
 
 test:
-	uv run pytest -v --random-order --cov=darts --cov-report=html -vv
+	uv run pytest -v --random-order --cov=darts_devkit --cov-report=html -vv
 
 docs:
 	rm -rf docs/build

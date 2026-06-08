@@ -89,12 +89,15 @@ class PolygonOverlapEvaluator(EvaluateInterface[PolygonOverlaEvaluationConfig]):
     --------
     .. code-block:: python
 
-        import darts.evaluation as ev
+        import darts_devkit.evaluation as ev
         import json
 
         from darts import DARTS, EvaluateRegistry
-        from darts.evaluation.evaluation_models import DARTSAnnotations
-        from darts.evaluation.polygon_overlap_evaluator import PolygonOverlaEvaluationConfig, ClassThresholdConfig
+        from darts_devkit.evaluation.evaluation_models import DARTSAnnotations
+        from darts_devkit.evaluation.polygon_overlap_evaluator import (
+            PolygonOverlaEvaluationConfig,
+            ClassThresholdConfig,
+        )
 
         darts = DARTS("/data", "v_00001")
 

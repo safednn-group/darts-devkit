@@ -92,9 +92,9 @@ A typical usage pattern looks like this:
 .. code-block:: python
 
     import logging
-    import darts.evaluation as de
+    import darts_devkit.evaluation as de
 
-    from darts import DARTS, EvaluateRegistry
+    from darts_devkit import DARTS, EvaluateRegistry
     logger = logging.getLogger(__name__)
 
 

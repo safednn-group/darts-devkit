@@ -1,6 +1,6 @@
 Registry
 --------
 
-.. automodule:: darts.evaluation.registry
+.. automodule:: darts_devkit.evaluation.registry
    :members:
    :private-members:

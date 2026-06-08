@@ -1,5 +1,5 @@
 DARTS
 -----
 
-.. automodule:: darts.dataset.darts
+.. automodule:: darts_devkit.dataset.darts
    :members:
