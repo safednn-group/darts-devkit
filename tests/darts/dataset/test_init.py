@@ -71,5 +71,6 @@ def test_load_table_calls(monkeypatch):
         "sample_data",
         "scene",
         "sensor",
+        "attribute",
     ]
     assert called_tables == expected_tables

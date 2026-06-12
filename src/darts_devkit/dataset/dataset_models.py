@@ -688,6 +688,21 @@ class Scene(Record):
 
 
 @dataclass(slots=True)
+class Attribute(Record):
+    """Attribute of the dataset.
+
+    Attributes:
+        token: Unique identifier of the record.
+        name: Human-readable name of the attribute.
+        description: Optional description of the attribute.
+    """
+
+    token: str
+    name: str
+    description: str
+
+
+@dataclass(slots=True)
 class Sensor(Record):
     """A sensor in the dataset.
 
