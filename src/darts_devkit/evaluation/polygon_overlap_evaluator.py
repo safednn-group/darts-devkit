@@ -39,7 +39,7 @@ class ClassThresholdConfig(BaseModel):
     iou_threshold: Annotated[float, Field(ge=0.0, le=1.0)]
 
 
-class PolygonOverlaEvaluationConfig(BaseModel):
+class PolygonOverlapEvaluationConfig(BaseModel):
     """User configuration for evaluation."""
 
     class_thresholds: list[ClassThresholdConfig]
@@ -72,7 +72,7 @@ class PolygonEvalBox:
 
 
 @register_evaluator("PolygonOverlapEvaluator")
-class PolygonOverlapEvaluator(EvaluateInterface[PolygonOverlaEvaluationConfig]):
+class PolygonOverlapEvaluator(EvaluateInterface[PolygonOverlapEvaluationConfig]):
     """PolygonOverlapEvaluator class.
 
     Evaluation overview
@@ -95,7 +95,7 @@ class PolygonOverlapEvaluator(EvaluateInterface[PolygonOverlaEvaluationConfig]):
         from darts import DARTS, EvaluateRegistry
         from darts_devkit.evaluation.evaluation_models import DARTSAnnotations
         from darts_devkit.evaluation.polygon_overlap_evaluator import (
-            PolygonOverlaEvaluationConfig,
+            PolygonOverlapEvaluationConfig,
             ClassThresholdConfig,
         )
 
@@ -111,7 +111,7 @@ class PolygonOverlapEvaluator(EvaluateInterface[PolygonOverlaEvaluationConfig]):
         evaluator_cls = EvaluateRegistry.get("PolygonOverlapEvaluator")
         evaluator = evaluator_cls()
 
-        config = PolygonOverlaEvaluationConfig(
+        config = PolygonOverlapEvaluationConfig(
             class_thresholds=[
                 ClassThresholdConfig(
                     class_name="multi_track_vehicle.car",
@@ -127,7 +127,7 @@ class PolygonOverlapEvaluator(EvaluateInterface[PolygonOverlaEvaluationConfig]):
         results = evaluator.evaluate(darts, annotations, config)
     """
 
-    def evaluate(self, darts: DARTS, annotations: DARTSAnnotations, config: PolygonOverlaEvaluationConfig) -> Results:
+    def evaluate(self, darts: DARTS, annotations: DARTSAnnotations, config: PolygonOverlapEvaluationConfig) -> Results:
         """Evaluate annotations with PolygonOverlapEvaluator.
 
         :param darts: DARTS database
@@ -153,7 +153,7 @@ class PolygonOverlapEvaluator(EvaluateInterface[PolygonOverlaEvaluationConfig]):
         self,
         gts_class_by_frame: list[list[PolygonEvalBox]],
         dts_class_by_frame: list[list[PolygonEvalBox]],
-        config: PolygonOverlaEvaluationConfig,
+        config: PolygonOverlapEvaluationConfig,
         class_cfg: ClassThresholdConfig,
     ) -> ClassResults:
         pr_curve = []
