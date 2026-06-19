@@ -1,5 +1,5 @@
 RecordCollection
 ----------------
 
-.. automodule:: darts.dataset.record_collection
+.. automodule:: darts_devkit.dataset.record_collection
    :members:

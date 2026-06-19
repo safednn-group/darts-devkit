@@ -1,5 +1,5 @@
 Evaluation Models
 -----------------
 
-.. automodule:: darts.evaluation.evaluation_models
+.. automodule:: darts_devkit.evaluation.evaluation_models
    :members:

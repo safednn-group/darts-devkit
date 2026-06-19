@@ -602,6 +602,7 @@ class SampleAnnotation2D(Record):
     score: float
     prev: str
     next: str
+    attribute_tokens: StrTuple
 
     @classmethod
     def from_dict(cls, data: dict) -> SampleAnnotation2D:
@@ -616,6 +617,7 @@ class SampleAnnotation2D(Record):
         """
         return cls(
             corners=corners(data.pop("corners")),
+            attribute_tokens=str_tuple(data.pop("attribute_tokens")),
             **data,
         )
 
@@ -685,6 +687,21 @@ class Scene(Record):
     first_sample_token: str
     last_sample_token: str
     scene_metadata_token: str = ""
+
+
+@dataclass(slots=True)
+class Attribute(Record):
+    """Attribute of the dataset.
+
+    Attributes:
+        token: Unique identifier of the record.
+        name: Human-readable name of the attribute.
+        description: Optional description of the attribute.
+    """
+
+    token: str
+    name: str
+    description: str
 
 
 @dataclass(slots=True)

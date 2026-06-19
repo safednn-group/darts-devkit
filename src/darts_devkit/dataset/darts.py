@@ -14,6 +14,7 @@ from tqdm import tqdm
 from .data_classes import LidarPointCloud
 from .dataset_models import (
     INS,
+    Attribute,
     CalibratedSensor,
     Category,
     EgoPose,
@@ -64,6 +65,8 @@ class DARTS:
         self._sample_data = self._load_table("sample_data", SampleData)
         self._scene = self._load_table("scene", Scene)
         self._sensor = self._load_table("sensor", Sensor)
+        self._attribute = self._load_table("attribute", Attribute)
+
         self._create_relationships()
 
     @property
@@ -75,6 +78,11 @@ class DARTS:
     def category(self) -> RecordCollection[Category]:
         """RecordCollection of Category records."""
         return self._category
+
+    @property
+    def attribute(self) -> RecordCollection[Attribute]:
+        """RecordCollection of Attribute records."""
+        return self._attribute
 
     @property
     def sensor(self) -> RecordCollection[Sensor]:

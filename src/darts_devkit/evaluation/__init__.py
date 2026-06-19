@@ -6,5 +6,8 @@ def register_polygon_overlap_evaluator() -> None:
     try:
         from .polygon_overlap_evaluator import PolygonOverlapEvaluator  # noqa: F401 PLC0415
     except ImportError as e:
-        msg = "PolygonOverlapEvaluator is not installed. Install with `uv pip install darts[polygon_overlap_evaluator]`"
+        msg = (
+            "PolygonOverlapEvaluator is not installed."
+            "Install with `uv pip install darts_devkit[polygon_overlap_evaluator]`"
+        )
         raise RuntimeError(msg) from e

@@ -1,11 +1,20 @@
 [project]
-name = "darts"
-version = "0.1.0"
-description = "darts_devkit"
+name = "darts-devkit"
+version = "1.0.0"
+description = "devkit for DARTS database"
 readme = "README.md"
-requires-python = "==3.14.*"
+requires-python = ">=3.14"
+classifiers = [
+    "Programming Language :: Python :: 3"
+]
+license = { file = "LICENSE.md" }
+
+
 dependencies = [
     "tqdm>=4.67.3",
+    "pillow>=12.2.0",
+    "numpy>=2.4.4",
+    "pydantic>=2.12.5",
 ]
 
 [dependency-groups]

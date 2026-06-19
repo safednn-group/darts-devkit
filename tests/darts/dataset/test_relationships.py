@@ -1,6 +1,6 @@
 from types import SimpleNamespace
 
-from darts.dataset.darts import DARTS
+from darts_devkit.dataset.darts import DARTS
 
 
 def test_add_channel_to_sample_data(monkeypatch, sample_data_record, calibrated_sensor_record, sensor_record):

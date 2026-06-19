@@ -2,7 +2,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from darts import DARTS
+from darts_devkit import DARTS
 
 
 @pytest.fixture

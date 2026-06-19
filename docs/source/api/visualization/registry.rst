@@ -1,6 +1,6 @@
 Registry
 --------
 
-.. automodule:: darts.visualization.registry
+.. automodule:: darts_devkit.visualization.registry
    :members:
    :private-members:

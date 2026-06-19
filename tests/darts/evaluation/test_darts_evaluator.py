@@ -1,13 +1,13 @@
 import pytest
 from pyquaternion import Quaternion
 from types import SimpleNamespace
-from darts.evaluation.polygon_overlap_evaluator import (
+from darts_devkit.evaluation.polygon_overlap_evaluator import (
     PolygonOverlapEvaluator,
-    PolygonOverlaEvaluationConfig,
+    PolygonOverlapEvaluationConfig,
     ClassThresholdConfig,
 )
-from darts.evaluation.evaluation_models import Box, Frame, DARTSAnnotations
-from darts.dataset.darts import DARTS
+from darts_devkit.evaluation.evaluation_models import Box, Frame, DARTSAnnotations
+from darts_devkit.dataset.darts import DARTS
 
 
 def make_box(center, size, yaw=0.0, name="box", score=1):
@@ -348,7 +348,7 @@ def test_evaluate(
 ):
     evaluator = PolygonOverlapEvaluator()
     class_names = (box["name"] for gt_frame in gt_frames for box in gt_frame["boxes"])
-    config = PolygonOverlaEvaluationConfig(
+    config = PolygonOverlapEvaluationConfig(
         class_thresholds=[
             ClassThresholdConfig(
                 class_name=name,

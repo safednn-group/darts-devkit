@@ -1,6 +1,6 @@
 Rerun Visualizer
 ----------------
 
-.. automodule:: darts.visualization.rerun_visualizer
+.. automodule:: darts_devkit.visualization.rerun_visualizer
    :members:
    :private-members:

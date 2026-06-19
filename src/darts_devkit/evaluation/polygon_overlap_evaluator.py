@@ -14,14 +14,14 @@ from pyquaternion import Quaternion
 from scipy.optimize import linear_sum_assignment
 from shapely.geometry import Polygon
 
-from darts.evaluation.registry import ClassResults, Results
+from darts_devkit.evaluation.registry import ClassResults, Results
 
 from .registry import EvaluateInterface, register_evaluator
 
 if TYPE_CHECKING:
-    from darts.dataset.darts import DARTS
-    from darts.dataset.dataset_models import SampleAnnotation
-    from darts.evaluation.evaluation_models import Box, DARTSAnnotations
+    from darts_devkit.dataset.darts import DARTS
+    from darts_devkit.dataset.dataset_models import SampleAnnotation
+    from darts_devkit.evaluation.evaluation_models import Box, DARTSAnnotations
 
 K_EPSILON = 1e-10
 K_MIN_BOX_DIM = 1e-2
@@ -39,7 +39,7 @@ class ClassThresholdConfig(BaseModel):
     iou_threshold: Annotated[float, Field(ge=0.0, le=1.0)]
 
 
-class PolygonOverlaEvaluationConfig(BaseModel):
+class PolygonOverlapEvaluationConfig(BaseModel):
     """User configuration for evaluation."""
 
     class_thresholds: list[ClassThresholdConfig]
@@ -72,7 +72,7 @@ class PolygonEvalBox:
 
 
 @register_evaluator("PolygonOverlapEvaluator")
-class PolygonOverlapEvaluator(EvaluateInterface[PolygonOverlaEvaluationConfig]):
+class PolygonOverlapEvaluator(EvaluateInterface[PolygonOverlapEvaluationConfig]):
     """PolygonOverlapEvaluator class.
 
     Evaluation overview
@@ -89,12 +89,15 @@ class PolygonOverlapEvaluator(EvaluateInterface[PolygonOverlaEvaluationConfig]):
     --------
     .. code-block:: python
 
-        import darts.evaluation as ev
+        import darts_devkit.evaluation as ev
         import json
 
         from darts import DARTS, EvaluateRegistry
-        from darts.evaluation.evaluation_models import DARTSAnnotations
-        from darts.evaluation.polygon_overlap_evaluator import PolygonOverlaEvaluationConfig, ClassThresholdConfig
+        from darts_devkit.evaluation.evaluation_models import DARTSAnnotations
+        from darts_devkit.evaluation.polygon_overlap_evaluator import (
+            PolygonOverlapEvaluationConfig,
+            ClassThresholdConfig,
+        )
 
         darts = DARTS("/data", "v_00001")
 
@@ -108,7 +111,7 @@ class PolygonOverlapEvaluator(EvaluateInterface[PolygonOverlaEvaluationConfig]):
         evaluator_cls = EvaluateRegistry.get("PolygonOverlapEvaluator")
         evaluator = evaluator_cls()
 
-        config = PolygonOverlaEvaluationConfig(
+        config = PolygonOverlapEvaluationConfig(
             class_thresholds=[
                 ClassThresholdConfig(
                     class_name="multi_track_vehicle.car",
@@ -124,7 +127,7 @@ class PolygonOverlapEvaluator(EvaluateInterface[PolygonOverlaEvaluationConfig]):
         results = evaluator.evaluate(darts, annotations, config)
     """
 
-    def evaluate(self, darts: DARTS, annotations: DARTSAnnotations, config: PolygonOverlaEvaluationConfig) -> Results:
+    def evaluate(self, darts: DARTS, annotations: DARTSAnnotations, config: PolygonOverlapEvaluationConfig) -> Results:
         """Evaluate annotations with PolygonOverlapEvaluator.
 
         :param darts: DARTS database
@@ -150,7 +153,7 @@ class PolygonOverlapEvaluator(EvaluateInterface[PolygonOverlaEvaluationConfig]):
         self,
         gts_class_by_frame: list[list[PolygonEvalBox]],
         dts_class_by_frame: list[list[PolygonEvalBox]],
-        config: PolygonOverlaEvaluationConfig,
+        config: PolygonOverlapEvaluationConfig,
         class_cfg: ClassThresholdConfig,
     ) -> ClassResults:
         pr_curve = []

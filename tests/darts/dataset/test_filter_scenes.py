@@ -2,7 +2,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from darts.dataset.darts import DARTS
+from darts_devkit.dataset.darts import DARTS
 
 
 @pytest.mark.parametrize(
