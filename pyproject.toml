@@ -19,7 +19,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "mypy>=1.19.1",
+    "mypy>=2.2.0",
     "types-tqdm>=4.67.3.20260205",
     "ruff>=0.15.0",
     "pipdeptree>=2.30.0",
