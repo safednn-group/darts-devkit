@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import TypeAlias
 
 from .record_collection import Record
@@ -157,7 +157,7 @@ class Timestamp:
         Returns:
             datetime: A timezone-aware datetime in UTC corresponding to the timestamp.
         """
-        return datetime.fromtimestamp(self.timestamp / 1_000_000, tz=UTC)
+        return datetime.fromtimestamp(self.timestamp / 1_000_000, tz=timezone.utc)
 
 
 @dataclass(slots=True)

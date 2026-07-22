@@ -3,9 +3,10 @@
 import logging
 import sys
 from dataclasses import dataclass
-from typing import Generic, Self, TypeVar
+from typing import Generic, TypeVar
 
 from tqdm import tqdm
+from typing_extensions import Self
 
 logger = logging.getLogger(__name__)
 T = TypeVar("T", bound="Record")
