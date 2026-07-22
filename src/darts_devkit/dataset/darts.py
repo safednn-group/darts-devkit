@@ -8,6 +8,7 @@ import logging
 import sys
 from collections import defaultdict
 from pathlib import Path
+from typing import TypeAlias
 
 import PIL.Image
 import PIL.ImageFile
@@ -35,9 +36,9 @@ from .record_collection import RecordCollection, T
 
 logger = logging.getLogger(__name__)
 
-type MetadataValue = str | int | float | bool | tuple[str] | tuple[int] | tuple[float] | tuple[bool]
+MetadataValue: TypeAlias = str | int | float | bool | tuple[str] | tuple[int] | tuple[float] | tuple[bool]
 
-type QueryValue = str | int | float | bool | list[str] | list[int] | list[float] | list[bool]
+QueryValue: TypeAlias = str | int | float | bool | list[str] | list[int] | list[float] | list[bool]
 
 
 class DARTS:

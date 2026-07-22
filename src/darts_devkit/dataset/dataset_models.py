@@ -4,25 +4,26 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from typing import TypeAlias
 
 from .record_collection import Record
 
-type Vec3 = tuple[float, float, float]
+Vec3: TypeAlias = tuple[float, float, float]
 """`Vec3` is a type variable representing any x,y,z vector."""
 
-type Corners = tuple[float, float, float, float]
+Corners: TypeAlias = tuple[float, float, float, float]
 """`Corners` is a type variable representing any min_x, min_y, max_x, max_y values."""
 
-type Quaternion = tuple[float, float, float, float]
+Quaternion: TypeAlias = tuple[float, float, float, float]
 """`Quaternion` is a type variable representing any w,x,y,z Quaternion."""
 
-type Mat3 = tuple[tuple[float, float, float], tuple[float, float, float], tuple[float, float, float]]
+Mat3: TypeAlias = tuple[tuple[float, float, float], tuple[float, float, float], tuple[float, float, float]]
 """`Mat3` is a type variable representing 3x3 matrix."""
 
-type StrTuple = tuple[str, ...]
+StrTuple: TypeAlias = tuple[str, ...]
 """Immutable sequence of strings."""
 
-type IntTuple = tuple[int, ...]
+IntTuple: TypeAlias = tuple[int, ...]
 """Immutable sequence of integers."""
 
 
