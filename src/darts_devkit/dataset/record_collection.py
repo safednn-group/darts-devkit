@@ -13,7 +13,7 @@ T = TypeVar("T", bound="Record")
 """`T` is a type variable representing any subclass of :class:`Record`."""
 
 
-@dataclass(slots=True)
+@dataclass()
 class Record:
     """Base class for records that can be loaded from a dictionary.
 

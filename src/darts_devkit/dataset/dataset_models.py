@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import TypeAlias
+
+from typing_extensions import TypeAlias
 
 from .record_collection import Record
 
@@ -137,7 +138,7 @@ def int_tuple(values: list[int]) -> IntTuple:
     return tuple(values)
 
 
-@dataclass(slots=True)
+@dataclass
 class Timestamp:
     """Immutable timestamp wrapper.
 
@@ -160,7 +161,7 @@ class Timestamp:
         return datetime.fromtimestamp(self.timestamp / 1_000_000, tz=timezone.utc)
 
 
-@dataclass(slots=True)
+@dataclass
 class CalibratedSensor(Record):
     """Calibration parameters for a specific sensor instance.
 
@@ -200,7 +201,7 @@ class CalibratedSensor(Record):
         )
 
 
-@dataclass(slots=True)
+@dataclass
 class Category(Record):
     """Object category definition.
 
@@ -215,7 +216,7 @@ class Category(Record):
     description: str
 
 
-@dataclass(slots=True)
+@dataclass
 class EgoPose(Record, Timestamp):
     """Ego vehicle pose at a particular timestamp.
 
@@ -246,7 +247,7 @@ class EgoPose(Record, Timestamp):
         return cls(translation=vec3(data.pop("translation")), rotation=quat(data.pop("rotation")), **data)
 
 
-@dataclass(slots=True)
+@dataclass
 class INS(Record, Timestamp):
     """Inertial Navigation System (INS) record.
 
@@ -305,7 +306,7 @@ class INS(Record, Timestamp):
     acceleration_z: float
 
 
-@dataclass(slots=True)
+@dataclass
 class Instance(Record):
     """3D Object instance record.
 
@@ -328,7 +329,7 @@ class Instance(Record):
     last_annotation_token: str
 
 
-@dataclass(slots=True)
+@dataclass
 class Instance2D(Record):
     """2D Object instance record.
 
@@ -358,7 +359,7 @@ class Instance2D(Record):
     last_image_annotation_token: str
 
 
-@dataclass(slots=True)
+@dataclass
 class SceneMetadata(Record):
     """Scene-level contextual metadata.
 
@@ -493,7 +494,7 @@ class SceneMetadata(Record):
         )
 
 
-@dataclass(slots=True)
+@dataclass
 class Sample(Record, Timestamp):
     """Dataset sample record.
 
@@ -521,7 +522,7 @@ class Sample(Record, Timestamp):
     ins_token: str = ""
 
 
-@dataclass(slots=True)
+@dataclass
 class SampleAnnotation(Record):
     """A single 3D annotation of an object in a sample.
 
@@ -576,7 +577,7 @@ class SampleAnnotation(Record):
         )
 
 
-@dataclass(slots=True)
+@dataclass
 class SampleAnnotation2D(Record):
     """A 2D bounding box annotation of an object in a camera sample_data.
 
@@ -625,7 +626,7 @@ class SampleAnnotation2D(Record):
         )
 
 
-@dataclass(slots=True)
+@dataclass
 class SampleData(Record, Timestamp):
     """A sensor data record associated with a sample.
 
@@ -669,7 +670,7 @@ class SampleData(Record, Timestamp):
     anns: StrTuple = field(default_factory=tuple)
 
 
-@dataclass(slots=True)
+@dataclass
 class Scene(Record):
     """A scene in the dataset, representing a continuous sequence of samples.
 
@@ -692,7 +693,7 @@ class Scene(Record):
     scene_metadata_token: str = ""
 
 
-@dataclass(slots=True)
+@dataclass
 class Attribute(Record):
     """Attribute of the dataset.
 
@@ -707,7 +708,7 @@ class Attribute(Record):
     description: str
 
 
-@dataclass(slots=True)
+@dataclass
 class Sensor(Record):
     """A sensor in the dataset.
 

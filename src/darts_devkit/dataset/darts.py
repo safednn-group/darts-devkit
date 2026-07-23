@@ -8,11 +8,12 @@ import logging
 import sys
 from collections import defaultdict
 from pathlib import Path
-from typing import TypeAlias
+from typing import Union
 
 import PIL.Image
 import PIL.ImageFile
 from tqdm import tqdm
+from typing_extensions import TypeAlias
 
 from .data_classes import LidarPointCloud
 from .dataset_models import (
@@ -36,9 +37,9 @@ from .record_collection import RecordCollection, T
 
 logger = logging.getLogger(__name__)
 
-MetadataValue: TypeAlias = str | int | float | bool | tuple[str] | tuple[int] | tuple[float] | tuple[bool]
+MetadataValue: TypeAlias = Union[str, int, float, bool, tuple[str], tuple[int], tuple[float], tuple[bool]]
 
-QueryValue: TypeAlias = str | int | float | bool | list[str] | list[int] | list[float] | list[bool]
+QueryValue: TypeAlias = Union[str, int, float, bool, list[str], list[int], list[float], list[bool]]
 
 
 class DARTS:
