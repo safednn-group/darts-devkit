@@ -71,10 +71,7 @@ class DARTS:
         self._scene = self._load_table("scene", Scene)
         self._sensor = self._load_table("sensor", Sensor)
         self._attribute = self._load_table("attribute", Attribute)
-
-        logger.info("Loading splits table.")
-        path = self._root / self._version / "splits.json"
-        self._splits = Splits(**json.loads(path.read_text()))
+        self._splits = self._load_splits_table()
 
         self._create_relationships()
 
@@ -152,6 +149,11 @@ class DARTS:
     def scene(self) -> RecordCollection[Scene]:
         """RecordCollection of Scene records."""
         return self._scene
+
+    def _load_splits_table(self) -> Splits:
+        logger.info("Loading splits table.")
+        path = self._root / self._version / "splits.json"
+        return Splits(**json.loads(path.read_text()))
 
     def verify_integrity(self) -> None:
         """This method checks checksums of sample_data files.

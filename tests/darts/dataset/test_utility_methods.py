@@ -17,6 +17,8 @@ def test_get_lidar_pointcloud_wrong_modality(sample_data_record):
 def test_get_lidar_pointcloud_wrong_filetype(monkeypatch, sample_data_record):
     monkeypatch.setattr(DARTS, "_load_table", lambda self, name, cls: None)
     monkeypatch.setattr(DARTS, "_create_relationships", lambda self: None)
+    monkeypatch.setattr(DARTS, "_load_splits_table", lambda self: None)
+
     d = DARTS("data", "v1")
     sd = sample_data_record(modality="lidar", filename="filename.png")
     with pytest.raises(TypeError):
@@ -36,6 +38,8 @@ def test_get_lidar_pointcloud(tmp_path, monkeypatch, sample_data_record):
     data.tofile(file_path)
     monkeypatch.setattr(DARTS, "_load_table", lambda self, name, cls: None)
     monkeypatch.setattr(DARTS, "_create_relationships", lambda self: None)
+    monkeypatch.setattr(DARTS, "_load_splits_table", lambda self: None)
+
     d = DARTS("data", "v1")
     monkeypatch.setattr(DARTS, "_get_sensor_data_path", lambda self, sd: Path(file_path))
     sd = sample_data_record(modality="lidar", filename="test.bin")
@@ -52,6 +56,7 @@ def test_get_image(tmp_path, monkeypatch, sample_data_record):
     img.save(file_path)
     monkeypatch.setattr(DARTS, "_load_table", lambda self, name, cls: None)
     monkeypatch.setattr(DARTS, "_create_relationships", lambda self: None)
+    monkeypatch.setattr(DARTS, "_load_splits_table", lambda self: None)
 
     d = DARTS("data", "v1")
     monkeypatch.setattr(DARTS, "_get_sensor_data_path", lambda self, sd: Path(file_path))

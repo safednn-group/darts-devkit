@@ -8,6 +8,7 @@ from darts_devkit import DARTS
 def test_init_sets_root_and_version(monkeypatch):
     monkeypatch.setattr(DARTS, "_load_table", lambda self, name, cls: None)
     monkeypatch.setattr(DARTS, "_create_relationships", lambda self: None)
+    monkeypatch.setattr(DARTS, "_load_splits_table", lambda self: None)
 
     d = DARTS("data", "v1")
     assert d._root == Path("data")
@@ -17,6 +18,7 @@ def test_init_sets_root_and_version(monkeypatch):
 def test_init_show_progress(monkeypatch):
     monkeypatch.setattr(DARTS, "_load_table", lambda self, name, cls: None)
     monkeypatch.setattr(DARTS, "_create_relationships", lambda self: None)
+    monkeypatch.setattr(DARTS, "_load_splits_table", lambda self: None)
 
     def make_instance(isatty_return, logger_return):
         monkeypatch.setattr(sys.stderr, "isatty", lambda: isatty_return)
@@ -40,6 +42,7 @@ def test_init_show_progress(monkeypatch):
 def test_repr(monkeypatch):
     monkeypatch.setattr(DARTS, "_load_table", lambda self, name, cls: None)
     monkeypatch.setattr(DARTS, "_create_relationships", lambda self: None)
+    monkeypatch.setattr(DARTS, "_load_splits_table", lambda self: None)
 
     d = DARTS("data", "v1")
     r = repr(d)
@@ -54,6 +57,7 @@ def test_load_table_calls(monkeypatch):
 
     monkeypatch.setattr(DARTS, "_load_table", fake_load_table)
     monkeypatch.setattr(DARTS, "_create_relationships", lambda self: None)
+    monkeypatch.setattr(DARTS, "_load_splits_table", lambda self: None)
 
     DARTS("data", "v1")
 
