@@ -709,6 +709,22 @@ class Attribute(Record):
 
 
 @dataclass
+class Splits(Record):
+    """Scenes split of the dataset.
+
+    Attributes:
+        train: Names of scenes for train split.
+        test: Names of scenes for test split.
+        val: Names of scenes for val split.
+
+    """
+
+    train: list[str]
+    test: list[str]
+    val: list[str]
+
+
+@dataclass
 class Sensor(Record):
     """A sensor in the dataset.
 

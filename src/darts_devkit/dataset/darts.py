@@ -31,6 +31,7 @@ from .dataset_models import (
     Scene,
     SceneMetadata,
     Sensor,
+    Splits,
     str_tuple,
 )
 from .record_collection import RecordCollection, T
@@ -71,7 +72,16 @@ class DARTS:
         self._sensor = self._load_table("sensor", Sensor)
         self._attribute = self._load_table("attribute", Attribute)
 
+        logger.info("Loading splits table.")
+        path = self._root / self._version / "splits.json"
+        self._splits = Splits(**json.loads(path.read_text()))
+
         self._create_relationships()
+
+    @property
+    def splits(self) -> Splits:
+        """Split record."""
+        return self._splits
 
     @property
     def calibrated_sensor(self) -> RecordCollection[CalibratedSensor]:
