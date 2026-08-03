@@ -7,6 +7,6 @@ core API
     :glob:
 
     darts
-    data_classes
+    pointcloud
     dataset_models
     record_collection

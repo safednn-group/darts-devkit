@@ -15,7 +15,6 @@ import PIL.ImageFile
 from tqdm import tqdm
 from typing_extensions import TypeAlias
 
-from .data_classes import LidarPointCloud
 from .dataset_models import (
     INS,
     Attribute,
@@ -34,6 +33,7 @@ from .dataset_models import (
     Splits,
     str_tuple,
 )
+from .pointcloud import LidarPointCloud
 from .record_collection import RecordCollection, T
 
 logger = logging.getLogger(__name__)

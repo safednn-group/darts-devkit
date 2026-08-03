@@ -4,7 +4,7 @@ from pathlib import Path
 from PIL import Image
 
 from darts_devkit import DARTS
-from darts_devkit.dataset.data_classes import LidarPointCloud
+from darts_devkit.dataset.pointcloud import LidarPointCloud
 
 
 def test_get_lidar_pointcloud_wrong_modality(sample_data_record):

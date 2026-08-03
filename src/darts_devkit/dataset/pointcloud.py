@@ -1,4 +1,4 @@
-"""Data classes."""
+"""Point cloud classes."""
 
 from __future__ import annotations
 
