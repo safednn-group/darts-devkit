@@ -1,26 +1,30 @@
 """Dataset tables."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime, timezone
+
+from typing_extensions import TypeAlias
 
 from .record_collection import Record
 
-type Vec3 = tuple[float, float, float]
+Vec3: TypeAlias = tuple[float, float, float]
 """`Vec3` is a type variable representing any x,y,z vector."""
 
-type Corners = tuple[float, float, float, float]
+Corners: TypeAlias = tuple[float, float, float, float]
 """`Corners` is a type variable representing any min_x, min_y, max_x, max_y values."""
 
-type Quaternion = tuple[float, float, float, float]
+Quaternion: TypeAlias = tuple[float, float, float, float]
 """`Quaternion` is a type variable representing any w,x,y,z Quaternion."""
 
-type Mat3 = tuple[tuple[float, float, float], tuple[float, float, float], tuple[float, float, float]]
+Mat3: TypeAlias = tuple[tuple[float, float, float], tuple[float, float, float], tuple[float, float, float]]
 """`Mat3` is a type variable representing 3x3 matrix."""
 
-type StrTuple = tuple[str, ...]
+StrTuple: TypeAlias = tuple[str, ...]
 """Immutable sequence of strings."""
 
-type IntTuple = tuple[int, ...]
+IntTuple: TypeAlias = tuple[int, ...]
 """Immutable sequence of integers."""
 
 
@@ -134,7 +138,7 @@ def int_tuple(values: list[int]) -> IntTuple:
     return tuple(values)
 
 
-@dataclass(slots=True)
+@dataclass
 class Timestamp:
     """Immutable timestamp wrapper.
 
@@ -154,10 +158,10 @@ class Timestamp:
         Returns:
             datetime: A timezone-aware datetime in UTC corresponding to the timestamp.
         """
-        return datetime.fromtimestamp(self.timestamp / 1_000_000, tz=UTC)
+        return datetime.fromtimestamp(self.timestamp / 1_000_000, tz=timezone.utc)
 
 
-@dataclass(slots=True)
+@dataclass
 class CalibratedSensor(Record):
     """Calibration parameters for a specific sensor instance.
 
@@ -197,7 +201,7 @@ class CalibratedSensor(Record):
         )
 
 
-@dataclass(slots=True)
+@dataclass
 class Category(Record):
     """Object category definition.
 
@@ -212,7 +216,7 @@ class Category(Record):
     description: str
 
 
-@dataclass(slots=True)
+@dataclass
 class EgoPose(Record, Timestamp):
     """Ego vehicle pose at a particular timestamp.
 
@@ -243,7 +247,7 @@ class EgoPose(Record, Timestamp):
         return cls(translation=vec3(data.pop("translation")), rotation=quat(data.pop("rotation")), **data)
 
 
-@dataclass(slots=True)
+@dataclass
 class INS(Record, Timestamp):
     """Inertial Navigation System (INS) record.
 
@@ -302,7 +306,7 @@ class INS(Record, Timestamp):
     acceleration_z: float
 
 
-@dataclass(slots=True)
+@dataclass
 class Instance(Record):
     """3D Object instance record.
 
@@ -325,7 +329,7 @@ class Instance(Record):
     last_annotation_token: str
 
 
-@dataclass(slots=True)
+@dataclass
 class Instance2D(Record):
     """2D Object instance record.
 
@@ -355,7 +359,7 @@ class Instance2D(Record):
     last_image_annotation_token: str
 
 
-@dataclass(slots=True)
+@dataclass
 class SceneMetadata(Record):
     """Scene-level contextual metadata.
 
@@ -490,7 +494,7 @@ class SceneMetadata(Record):
         )
 
 
-@dataclass(slots=True)
+@dataclass
 class Sample(Record, Timestamp):
     """Dataset sample record.
 
@@ -518,7 +522,7 @@ class Sample(Record, Timestamp):
     ins_token: str = ""
 
 
-@dataclass(slots=True)
+@dataclass
 class SampleAnnotation(Record):
     """A single 3D annotation of an object in a sample.
 
@@ -573,7 +577,7 @@ class SampleAnnotation(Record):
         )
 
 
-@dataclass(slots=True)
+@dataclass
 class SampleAnnotation2D(Record):
     """A 2D bounding box annotation of an object in a camera sample_data.
 
@@ -622,7 +626,7 @@ class SampleAnnotation2D(Record):
         )
 
 
-@dataclass(slots=True)
+@dataclass
 class SampleData(Record, Timestamp):
     """A sensor data record associated with a sample.
 
@@ -666,7 +670,7 @@ class SampleData(Record, Timestamp):
     anns: StrTuple = field(default_factory=tuple)
 
 
-@dataclass(slots=True)
+@dataclass
 class Scene(Record):
     """A scene in the dataset, representing a continuous sequence of samples.
 
@@ -689,7 +693,7 @@ class Scene(Record):
     scene_metadata_token: str = ""
 
 
-@dataclass(slots=True)
+@dataclass
 class Attribute(Record):
     """Attribute of the dataset.
 
@@ -704,7 +708,23 @@ class Attribute(Record):
     description: str
 
 
-@dataclass(slots=True)
+@dataclass
+class Splits(Record):
+    """Scenes split of the dataset.
+
+    Attributes:
+        train: Names of scenes for train split.
+        test: Names of scenes for test split.
+        val: Names of scenes for val split.
+
+    """
+
+    train: list[str]
+    test: list[str]
+    val: list[str]
+
+
+@dataclass
 class Sensor(Record):
     """A sensor in the dataset.
 

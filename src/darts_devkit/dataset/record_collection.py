@@ -3,17 +3,17 @@
 import logging
 import sys
 from dataclasses import dataclass
-from typing import Self, TypeVar
+from typing import Generic, TypeVar
 
 from tqdm import tqdm
+from typing_extensions import Self
 
 logger = logging.getLogger(__name__)
-
 T = TypeVar("T", bound="Record")
 """`T` is a type variable representing any subclass of :class:`Record`."""
 
 
-@dataclass(slots=True)
+@dataclass()
 class Record:
     """Base class for records that can be loaded from a dictionary.
 
@@ -34,7 +34,7 @@ class Record:
         return cls(**data)
 
 
-class RecordCollection[T]:
+class RecordCollection(Generic[T]):
     """In-memory indexed collection of dataset records.
 
     `T` is a type variable representing any subclass of :class:`Record`.

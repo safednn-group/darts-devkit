@@ -15,8 +15,8 @@ if TYPE_CHECKING:
     import PIL.ImageFile
 
     from darts_devkit.dataset.darts import DARTS
-    from darts_devkit.dataset.data_classes import LidarPointCloud
     from darts_devkit.dataset.dataset_models import Sample, SampleAnnotation, SampleAnnotation2D, SampleData
+    from darts_devkit.dataset.pointcloud import LidarPointCloud
 import matplotlib as mpl
 import rerun as rr
 

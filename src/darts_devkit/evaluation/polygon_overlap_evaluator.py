@@ -190,8 +190,10 @@ class PolygonOverlapEvaluator(EvaluateInterface[PolygonOverlapEvaluationConfig])
 
                 matched_gt = set()
                 matched_dt = set()
-
-                for r, c in zip(row_ind, col_ind, strict=True):
+                if len(row_ind) != len(col_ind):
+                    msg = "Lengths do not match"
+                    raise ValueError(msg)
+                for r, c in zip(row_ind, col_ind):
                     if iou_matrix[r, c] >= class_cfg.iou_threshold:
                         tp += 1
                         matched_gt.add(c)

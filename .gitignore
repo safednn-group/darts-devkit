@@ -9,3 +9,4 @@ dist
 __pycache__
 build
 .ipynb_checkpoints
+uv.lock

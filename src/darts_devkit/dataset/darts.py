@@ -1,17 +1,20 @@
 """Module for DARTS main class."""
 
+from __future__ import annotations
+
 import hashlib
 import json
 import logging
 import sys
 from collections import defaultdict
 from pathlib import Path
+from typing import Union
 
 import PIL.Image
 import PIL.ImageFile
 from tqdm import tqdm
+from typing_extensions import TypeAlias
 
-from .data_classes import LidarPointCloud
 from .dataset_models import (
     INS,
     Attribute,
@@ -27,15 +30,17 @@ from .dataset_models import (
     Scene,
     SceneMetadata,
     Sensor,
+    Splits,
     str_tuple,
 )
+from .pointcloud import LidarPointCloud
 from .record_collection import RecordCollection, T
 
 logger = logging.getLogger(__name__)
 
-type MetadataValue = str | int | float | bool | tuple[str] | tuple[int] | tuple[float] | tuple[bool]
+MetadataValue: TypeAlias = Union[str, int, float, bool, tuple[str], tuple[int], tuple[float], tuple[bool]]
 
-type QueryValue = str | int | float | bool | list[str] | list[int] | list[float] | list[bool]
+QueryValue: TypeAlias = Union[str, int, float, bool, list[str], list[int], list[float], list[bool]]
 
 
 class DARTS:
@@ -66,8 +71,14 @@ class DARTS:
         self._scene = self._load_table("scene", Scene)
         self._sensor = self._load_table("sensor", Sensor)
         self._attribute = self._load_table("attribute", Attribute)
+        self._splits = self._load_splits_table()
 
         self._create_relationships()
+
+    @property
+    def splits(self) -> Splits:
+        """Split record."""
+        return self._splits
 
     @property
     def calibrated_sensor(self) -> RecordCollection[CalibratedSensor]:
@@ -138,6 +149,11 @@ class DARTS:
     def scene(self) -> RecordCollection[Scene]:
         """RecordCollection of Scene records."""
         return self._scene
+
+    def _load_splits_table(self) -> Splits:
+        logger.info("Loading splits table.")
+        path = self._root / self._version / "splits.json"
+        return Splits(**json.loads(path.read_text()))
 
     def verify_integrity(self) -> None:
         """This method checks checksums of sample_data files.
