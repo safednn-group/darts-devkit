@@ -200,11 +200,11 @@ class DARTS:
             score=1,
         )
 
-    def save_test_annotations(self, path: str) -> None:
-        """Saves annotations from scenes in test split in DARTSAnnotations format.
+    def get_test_annotations(self) -> DARTSAnnotations:
+        """Returns annotations from scenes in test split in DARTSAnnotations format.
 
-        Args:
-            path: path where to save annotations file
+        Returns:
+            DARTSAnnotations instance with filtered annotations
         """
         sequences: dict[str, list[Frame]] = {}
         for scene in self.scene.all():
@@ -220,10 +220,7 @@ class DARTS:
                         boxes=[self._annotation_to_box(annotation) for annotation in sample_annotations],
                     )
                 )
-        test_annotations = DARTSAnnotations(sequences=sequences)
-        logger.info("Saving test annotations under %s.", path)
-        with Path.open(Path(path), "w") as f:
-            json.dump(test_annotations.model_dump(), f, indent=4)
+        return DARTSAnnotations(sequences=sequences)
 
     def remove_test_annotations(self) -> DARTS:
         """Returns DARTS instance without annotations for scenes in test split.
