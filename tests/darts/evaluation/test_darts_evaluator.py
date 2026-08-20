@@ -6,7 +6,7 @@ from darts_devkit.evaluation.polygon_overlap_evaluator import (
     PolygonOverlapEvaluationConfig,
     ClassThresholdConfig,
 )
-from darts_devkit.evaluation.evaluation_models import Box, Frame, DARTSAnnotations
+from darts_devkit.dataset.evaluation_models import Box, Frame, DARTSAnnotations
 from darts_devkit.dataset.darts import DARTS
 
 
@@ -397,3 +397,40 @@ def test_evaluate(
         config=config,
     )
     assert results.m_ap == expected_ap
+
+
+def test_evaluate_ground_truth():
+    evaluator = PolygonOverlapEvaluator()
+    class_names = ["box"]
+    config = PolygonOverlapEvaluationConfig(
+        class_thresholds=[
+            ClassThresholdConfig(
+                class_name=name,
+                iou_threshold=0.5,
+            )
+            for name in class_names
+        ],
+        num_score_thresholds=3,
+        pr_curve_density=0.05,
+        pr_rounding=6,
+        min_gt_lidar_points=0,
+    )
+    annotations = DARTSAnnotations(
+        sequences={
+            "scene_1": [
+                Frame(
+                    sample_token="sample1",
+                    boxes=[
+                        make_box(
+                            center=[1, 1, 1],
+                            size=[1, 1, 1],
+                            name="box",
+                            score=1,
+                        )
+                    ],
+                )
+            ]
+        }
+    )
+    results = evaluator.evaluate_ground_truth(annotations, annotations, config)
+    assert results.m_ap == 1.0

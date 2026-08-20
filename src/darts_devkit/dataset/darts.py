@@ -15,6 +15,8 @@ import PIL.ImageFile
 from tqdm import tqdm
 from typing_extensions import TypeAlias
 
+from darts_devkit.dataset.evaluation_models import Box, DARTSAnnotations, Frame
+
 from .dataset_models import (
     INS,
     Attribute,
@@ -154,6 +156,115 @@ class DARTS:
         logger.info("Loading splits table.")
         path = self._root / self._version / "splits.json"
         return Splits(**json.loads(path.read_text()))
+
+    def _save_splits_table(self, version_name: str) -> None:
+        logger.info("Saving splits table.")
+        path = self._root / version_name / "splits.json"
+        with Path.open(path, "w") as f:
+            json.dump(self.splits.__dict__, f, indent=4)
+
+    def save(self, version_name: str) -> None:
+        """Saves current version of dataset.
+
+        Args:
+            version_name: name of the version with which to save dataset
+        """
+        if Path(self._root / version_name).exists():
+            msg = f"Dataset version {version_name} already exists."
+            logger.error(msg)
+            raise NameError(msg)
+        Path(self._root / version_name).mkdir(parents=True)
+        self._save_table("attribute", self.attribute, version_name)
+        self._save_table("calibrated_sensor", self.calibrated_sensor, version_name)
+        self._save_table("category", self.category, version_name)
+        self._save_table("ego_pose", self.ego_pose, version_name)
+        self._save_table("ins", self.ins, version_name)
+        self._save_table("instance", self.instance, version_name)
+        self._save_table("instance_2d", self.instance_2d, version_name)
+        self._save_table("metadata", self.scene_metadata, version_name)
+        self._save_table("sample", self.sample, version_name)
+        self._save_table("sample_annotation", self.sample_annotation, version_name)
+        self._save_table("sample_annotation_2d", self.sample_annotation_2d, version_name)
+        self._save_table("sample_data", self.sample_data, version_name)
+        self._save_table("scene", self.scene, version_name)
+        self._save_table("sensor", self.sensor, version_name)
+        self._save_splits_table(version_name)
+
+    def _annotation_to_box(self, sample_annotation: SampleAnnotation) -> Box:
+        category = self.get_category_from_annotation(sample_annotation.token)
+        return Box(
+            center=list(sample_annotation.translation),
+            size=list(sample_annotation.size),
+            orientation=list(sample_annotation.rotation),
+            name=category.name,
+            score=1,
+        )
+
+    def get_test_annotations(self) -> DARTSAnnotations:
+        """Returns annotations from scenes in test split in DARTSAnnotations format.
+
+        Returns:
+            DARTSAnnotations instance with filtered annotations
+        """
+        sequences: dict[str, list[Frame]] = {}
+        for scene in self.scene.all():
+            if scene.name not in self.splits.test:
+                continue
+            sequences[scene.token] = []
+            samples = self.get_samples_from_scene(scene.token)
+            for sample in samples:
+                sample_annotations = self.get_annotations_from_samples([sample])
+                sequences[scene.token].append(
+                    Frame(
+                        sample_token=sample.token,
+                        boxes=[self._annotation_to_box(annotation) for annotation in sample_annotations],
+                    )
+                )
+        return DARTSAnnotations(sequences=sequences)
+
+    def remove_test_annotations(self) -> DARTS:
+        """Returns DARTS instance without annotations for scenes in test split.
+
+        Returns:
+            DARTS instance with filtered annotations
+        """
+        scenes = [scene for scene in self.scene.all() if scene.name not in self.splits.test]
+
+        samples = self._samples_from_scenes(scenes)
+        sample_datas = self._sample_data_from_samples(samples)
+
+        sample_annotations = self.get_annotations_from_samples(samples)
+        sample_annotations_2d = self.get_annotations_2d_from_sample_datas(sample_datas)
+
+        instances = self._collect(
+            self._instance,
+            {a.instance_token for a in sample_annotations},
+        )
+
+        instances_2d = self._collect(
+            self._instance_2d,
+            {a.instance_2d_token for a in sample_annotations_2d},
+        )
+        filtered = self._clone_empty()
+        filtered.__dict__.update(
+            {
+                "_scene_metadata": self._scene_metadata,
+                "_scene": self._scene,
+                "_sample": self._sample,
+                "_sample_data": self._sample_data,
+                "_sample_annotation": RecordCollection(sample_annotations),
+                "_sample_annotation_2d": RecordCollection(sample_annotations_2d),
+                "_ins": self._ins,
+                "_instance": RecordCollection(instances),
+                "_instance_2d": RecordCollection(instances_2d),
+                "_ego_pose": self._ego_pose,
+                "_calibrated_sensor": self._calibrated_sensor,
+                "_category": self._category,
+                "_sensor": self._sensor,
+            }
+        )
+
+        return filtered
 
     def verify_integrity(self) -> None:
         """This method checks checksums of sample_data files.
@@ -486,6 +597,12 @@ class DARTS:
         iterable = tqdm(data, desc=f"Loading {name} records", unit="records") if self._show_progress else data
         records = [cls.from_dict(item) for item in iterable]
         return RecordCollection(records)
+
+    def _save_table(self, name: str, record_collection: RecordCollection[T], dataset_version: str) -> None:
+        logger.info("Saving %s table.", name)
+        path = self._root / dataset_version / f"{name}.json"
+        with Path.open(path, "w") as f:
+            json.dump([record.to_dict() for record in record_collection.all()], f, indent=4)
 
     def _get_checksum(self, filename: str) -> str:
         return hashlib.md5((self._root / filename).read_bytes()).hexdigest()
