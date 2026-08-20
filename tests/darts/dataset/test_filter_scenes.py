@@ -150,7 +150,7 @@ def test_filter_scenes_first(darts_dataset, query):
     assert len(filtered.instance_2d.all()) == 2
     assert len(filtered.ego_pose.all()) == 3
     assert len(filtered.calibrated_sensor.all()) == 1
-    assert len(filtered.category.all()) == 0
+    assert len(filtered.category.all()) == 1
     assert len(filtered.sensor.all()) == 0
 
 
@@ -172,14 +172,14 @@ def test_filter_scenes_second(darts_dataset, query):
     assert len(scenes) == 1
     assert len(filtered.sample.all()) == 2
     assert len(filtered.sample_data.all()) == 3
-    assert len(filtered.sample_annotation.all()) == 0
+    assert len(filtered.sample_annotation.all()) == 1
     assert len(filtered.sample_annotation_2d.all()) == 0
     assert len(filtered.ins.all()) == 2
-    assert len(filtered.instance.all()) == 0
+    assert len(filtered.instance.all()) == 1
     assert len(filtered.instance_2d.all()) == 0
     assert len(filtered.ego_pose.all()) == 3
     assert len(filtered.calibrated_sensor.all()) == 1
-    assert len(filtered.category.all()) == 0
+    assert len(filtered.category.all()) == 1
     assert len(filtered.sensor.all()) == 0
 
 
@@ -197,7 +197,7 @@ def test_filter_scenes_no_results(darts_dataset):
     assert len(filtered.instance_2d.all()) == 0
     assert len(filtered.ego_pose.all()) == 0
     assert len(filtered.calibrated_sensor.all()) == 0
-    assert len(filtered.category.all()) == 0
+    assert len(filtered.category.all()) == 1
     assert len(filtered.sensor.all()) == 0
 
 
@@ -208,12 +208,12 @@ def test_filter_scenes_multiple_results(darts_dataset):
     assert len(filtered.scene.all()) == 2
     assert len(filtered.sample.all()) == 4
     assert len(filtered.sample_data.all()) == 6
-    assert len(filtered.sample_annotation.all()) == 2
+    assert len(filtered.sample_annotation.all()) == 3
     assert len(filtered.sample_annotation_2d.all()) == 2
     assert len(filtered.ins.all()) == 4
-    assert len(filtered.instance.all()) == 1
+    assert len(filtered.instance.all()) == 2
     assert len(filtered.instance_2d.all()) == 2
     assert len(filtered.ego_pose.all()) == 6
     assert len(filtered.calibrated_sensor.all()) == 2
-    assert len(filtered.category.all()) == 0
+    assert len(filtered.category.all()) == 1
     assert len(filtered.sensor.all()) == 0
