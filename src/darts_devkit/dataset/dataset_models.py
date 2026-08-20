@@ -82,7 +82,7 @@ def quat(values: list[float]) -> Quaternion:
     return (w, x, y, z)
 
 
-def mat3(values: list[list[float]] | None) -> Mat3 | None:
+def mat3(values: list[list[float]] | None) -> Mat3 | tuple[()]:
     """Construct a type variable representing 3x3 matrix.
 
     Args:
@@ -93,7 +93,7 @@ def mat3(values: list[list[float]] | None) -> Mat3 | None:
 
     """
     if not values:
-        return None
+        return ()
     try:
         x_1, x_2, x_3 = values[0]
         x_4, x_5, x_6 = values[1]
@@ -180,7 +180,7 @@ class CalibratedSensor(Record):
     sensor_token: str
     translation: Vec3
     rotation: Quaternion
-    camera_intrinsic: Mat3 | None = None
+    camera_intrinsic: Mat3 | tuple[()] = field(default_factory=lambda: ())
 
     @classmethod
     def from_dict(cls, data: dict) -> CalibratedSensor:
@@ -517,9 +517,9 @@ class Sample(Record, Timestamp):
     scene_token: str
     prev: str
     next: str
-    data: dict[str, str] = field(default_factory=dict)
-    anns: StrTuple = field(default_factory=tuple)
-    ins_token: str = ""
+    data: dict[str, str] = field(default_factory=dict, metadata={"dump": False})
+    anns: StrTuple = field(default_factory=tuple, metadata={"dump": False})
+    ins_token: str = field(default="", metadata={"dump": False})
 
 
 @dataclass
@@ -665,9 +665,9 @@ class SampleData(Record, Timestamp):
     next: str
     is_key_frame: bool
     checksum: str
-    channel: str = ""
-    modality: str = ""
-    anns: StrTuple = field(default_factory=tuple)
+    channel: str = field(default="", metadata={"dump": False})
+    modality: str = field(default="", metadata={"dump": False})
+    anns: StrTuple = field(default_factory=tuple, metadata={"dump": False})
 
 
 @dataclass

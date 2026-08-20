@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from darts_devkit.dataset.darts import DARTS
-    from darts_devkit.evaluation.evaluation_models import DARTSAnnotations
+    from darts_devkit.dataset.evaluation_models import DARTSAnnotations
 from typing import Generic, TypeVar
 
 from pydantic import BaseModel

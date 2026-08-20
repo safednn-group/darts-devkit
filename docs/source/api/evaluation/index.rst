@@ -8,4 +8,3 @@ evaluate API
 
     registry
     polygon_overlap_evaluator
-    evaluation_models

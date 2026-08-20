@@ -6,7 +6,7 @@ from darts_devkit.evaluation.polygon_overlap_evaluator import (
     PolygonOverlapEvaluationConfig,
     ClassThresholdConfig,
 )
-from darts_devkit.evaluation.evaluation_models import Box, Frame, DARTSAnnotations
+from darts_devkit.dataset.evaluation_models import Box, Frame, DARTSAnnotations
 from darts_devkit.dataset.darts import DARTS
 
 

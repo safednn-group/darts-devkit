@@ -2,8 +2,8 @@
 
 import logging
 import sys
-from dataclasses import dataclass
-from typing import Generic, TypeVar
+from dataclasses import dataclass, fields, is_dataclass
+from typing import Any, Generic, TypeVar
 
 from tqdm import tqdm
 from typing_extensions import Self
@@ -32,6 +32,25 @@ class Record:
 
         """
         return cls(**data)
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert the record to a dictionary."""
+        return {f.name: self._serialize(getattr(self, f.name)) for f in fields(self) if f.metadata.get("dump", True)}
+
+    @staticmethod
+    def _serialize(obj: object) -> object:
+        if is_dataclass(obj):
+            return {
+                f.name: Record._serialize(getattr(obj, f.name)) for f in fields(obj) if f.metadata.get("dump", True)
+            }
+
+        if isinstance(obj, dict):
+            return {key: Record._serialize(value) for key, value in obj.items()}
+
+        if isinstance(obj, (list, tuple)):
+            return [Record._serialize(value) for value in obj]
+
+        return obj
 
 
 class RecordCollection(Generic[T]):
