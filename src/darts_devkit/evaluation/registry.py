@@ -50,6 +50,20 @@ class EvaluateInterface(ABC, Generic[C]):
             evaluation results
         """
 
+    @abstractmethod
+    def evaluate_ground_truth(
+        self, ground_truth: DARTSAnnotations, annotations: DARTSAnnotations, config: C
+    ) -> Results:
+        """Abstract method for EvaluateInterface interface.
+
+        Args:
+            ground_truth: Ground truth annotations
+            annotations: Annotations creted by user
+            config: needed config for evaluator
+        Returns:
+            evaluation results
+        """
+
 
 class EvaluateRegistry:
     """Registry for classes that inherit from EvaluateInterface.
