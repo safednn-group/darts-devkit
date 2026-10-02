@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from darts_devkit.dataset.darts import DARTS
-    from darts_devkit.evaluation.evaluation_models import DARTSAnnotations
+    from darts_devkit.dataset.evaluation_models import DARTSAnnotations
 from typing import Generic, TypeVar
 
 from pydantic import BaseModel
@@ -44,6 +44,20 @@ class EvaluateInterface(ABC, Generic[C]):
 
         Args:
             darts: DARTS database
+            annotations: Annotations creted by user
+            config: needed config for evaluator
+        Returns:
+            evaluation results
+        """
+
+    @abstractmethod
+    def evaluate_ground_truth(
+        self, ground_truth: DARTSAnnotations, annotations: DARTSAnnotations, config: C
+    ) -> Results:
+        """Abstract method for EvaluateInterface interface.
+
+        Args:
+            ground_truth: Ground truth annotations
             annotations: Annotations creted by user
             config: needed config for evaluator
         Returns:

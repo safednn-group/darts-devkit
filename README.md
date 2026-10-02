@@ -29,7 +29,7 @@ uv pip install darts_devkit[polygon_overlap_evaluator]
     import json
     import darts_devkit.evaluation as ev
     from darts_devkit import DARTS, EvaluateRegistry
-    from darts_devkit.evaluation.evaluation_models import DARTSAnnotations
+    from darts_devkit.dataset.evaluation_models import DARTSAnnotations
     from darts_devkit.evaluation.polygon_overlap_evaluator import PolygonOverlapEvaluationConfig, ClassThresholdConfig
 
     ev.register_polygon_overlap_evaluator()

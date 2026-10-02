@@ -9,4 +9,5 @@ core API
     darts
     pointcloud
     dataset_models
+    evaluation_models
     record_collection

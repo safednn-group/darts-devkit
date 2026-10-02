@@ -111,9 +111,9 @@ def scene_metadata_record():
 
 @pytest.fixture
 def scene_record():
-    def _factory(token="scene1", scene_metadata_token=None, first_sample_token="sample1"):
+    def _factory(token="scene1", scene_metadata_token=None, first_sample_token="sample1", name="scene_name"):
         return SimpleNamespace(
-            token=token, scene_metadata_token=scene_metadata_token, first_sample_token=first_sample_token
+            token=token, scene_metadata_token=scene_metadata_token, first_sample_token=first_sample_token, name=name
         )
 
     return _factory
@@ -126,9 +126,9 @@ def sample_annotation_record():
         sample_token="sample1",
         instance_token="instance1",
         calibrated_sensor_token="",
-        size=None,
-        translation=None,
-        rotation=None,
+        size=[1, 1, 1],
+        translation=[1, 1, 1],
+        rotation=[1, 0, 0, 0],
         num_lidar_pts=10,
         score=1,
     ):
@@ -212,11 +212,12 @@ def darts_dataset(
     instance_record,
     instance_2d_record,
     ins_record,
+    category_record,
 ):
     d = object.__new__(DARTS)
 
-    s1 = scene_record(token="scene_1", scene_metadata_token="metadata_1", first_sample_token="sample11")
-    s2 = scene_record(token="scene_2", scene_metadata_token="metadata_2", first_sample_token="sample21")
+    s1 = scene_record(token="scene_1", scene_metadata_token="metadata_1", first_sample_token="sample11", name="scene_1")
+    s2 = scene_record(token="scene_2", scene_metadata_token="metadata_2", first_sample_token="sample21", name="scene_2")
 
     sample11 = sample_record(
         token="sample11", anns=("ann11",), data={"CAM": "sd11"}, ins_token="ins11", prev="", next="sample12"
@@ -226,7 +227,7 @@ def darts_dataset(
     )
 
     sample21 = sample_record(
-        token="sample21", anns=(), data={"CAM": "sd21"}, ins_token="ins21", prev="", next="sample22"
+        token="sample21", anns=("ann21",), data={"CAM": "sd21"}, ins_token="ins21", prev="", next="sample22"
     )
     sample22 = sample_record(
         token="sample22", anns=(), data={"CAM": "sd23"}, ins_token="ins22", prev="sample21", next=""
@@ -308,6 +309,7 @@ def darts_dataset(
 
     ann11 = sample_annotation_record(token="ann11", sample_token="sample11", instance_token="instance11")
     ann12 = sample_annotation_record(token="ann12", sample_token="sample12", instance_token="instance11")
+    ann21 = sample_annotation_record(token="ann21", sample_token="sample21", instance_token="instance21")
 
     ann2d11 = sample_annotation_2d_record(
         token="ann2d11",
@@ -334,7 +336,10 @@ def darts_dataset(
     ep22 = ego_pose_record(token="ep22")
     ep23 = ego_pose_record(token="ep23")
 
-    i11 = instance_record(token="instance11")
+    i11 = instance_record(token="instance11", category_token="cat1")
+    i21 = instance_record(token="instance21", category_token="cat1")
+
+    c11 = category_record()
 
     i2d1 = instance_2d_record(token="instance2d1")
     i2d2 = instance_2d_record(token="instance2d2")
@@ -354,15 +359,16 @@ def darts_dataset(
     d._scene = rc([s1, s2])
     d._sample = rc([sample11, sample12, sample21, sample22])
     d._sample_data = rc([sd11, sd12, sd13, sd21, sd22, sd23])
-    d._sample_annotation = rc([ann11, ann12])
+    d._sample_annotation = rc([ann11, ann12, ann21])
     d._sample_annotation_2d = rc([ann2d11, ann2d12])
     d._calibrated_sensor = rc([cs1, cs2])
     d._ego_pose = rc([ep11, ep12, ep13, ep21, ep22, ep23])
-    d._instance = rc([i11])
+    d._instance = rc([i11, i21])
     d._instance_2d = rc([i2d1, i2d2])
     d._ins = rc([ins11, ins12, ins21, ins22])
 
-    d._category = rc([])
+    d._category = rc([c11])
     d._sensor = rc([])
+    d._splits = SimpleNamespace(train=["scene_1"], test=["scene_2"])
 
     return d

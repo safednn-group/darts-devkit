@@ -21,7 +21,7 @@ from .registry import EvaluateInterface, register_evaluator
 if TYPE_CHECKING:
     from darts_devkit.dataset.darts import DARTS
     from darts_devkit.dataset.dataset_models import SampleAnnotation
-    from darts_devkit.evaluation.evaluation_models import Box, DARTSAnnotations
+    from darts_devkit.dataset.evaluation_models import Box, DARTSAnnotations
 
 K_EPSILON = 1e-10
 K_MIN_BOX_DIM = 1e-2
@@ -142,6 +142,27 @@ class PolygonOverlapEvaluator(EvaluateInterface[PolygonOverlapEvaluationConfig])
                 [gt for gt in gts if gt.name == class_cfg.class_name and gt.num_lidar_pts >= config.min_gt_lidar_points]
                 for gts in gts_by_frame
             ]
+            dts_class_by_frame = [[dt for dt in dts if dt.name == class_cfg.class_name] for dts in dts_by_frame]
+            class_result = self._get_class_result(gts_class_by_frame, dts_class_by_frame, config, class_cfg)
+            class_results.append(class_result)
+            m_ap += class_result.ap
+        m_ap /= len(class_results)
+        return Results(class_results=class_results, m_ap=m_ap)
+
+    def evaluate_ground_truth(
+        self, ground_truth: DARTSAnnotations, annotations: DARTSAnnotations, config: PolygonOverlapEvaluationConfig
+    ) -> Results:
+        """Evaluate annotations with PolygonOverlapEvaluator using ground truth file.
+
+        :param ground_truth: Ground truth annotations
+        :param annotations: Annotations created by user
+        :return: evaluation results
+        """
+        gts_by_frame, dts_by_frame = self._get_boxes_by_frame_with_ground_truth(ground_truth, annotations)
+        class_results: list[ClassResults] = []
+        m_ap = 0.0
+        for class_cfg in config.class_thresholds:
+            gts_class_by_frame = [[gt for gt in gts if gt.name == class_cfg.class_name] for gts in gts_by_frame]
             dts_class_by_frame = [[dt for dt in dts if dt.name == class_cfg.class_name] for dts in dts_by_frame]
             class_result = self._get_class_result(gts_class_by_frame, dts_class_by_frame, config, class_cfg)
             class_results.append(class_result)
@@ -283,6 +304,23 @@ class PolygonOverlapEvaluator(EvaluateInterface[PolygonOverlapEvaluationConfig])
             precision_recall[-1] = (prev_p, last_r)
 
         return precision_recall
+
+    def _get_boxes_by_frame_with_ground_truth(
+        self, ground_truth: DARTSAnnotations, annotations: DARTSAnnotations
+    ) -> tuple[list[list[PolygonEvalBox]], list[list[PolygonEvalBox]]]:
+        gts_by_frame: list[list[PolygonEvalBox]] = []
+        dts_by_frame: list[list[PolygonEvalBox]] = []
+        for scene_token, samples in ground_truth.sequences.items():
+            for sample_idx, sample in enumerate(samples):
+                gts_by_frame.append([self._box_to_polygon_eval_box(gt) for gt in sample.boxes])
+                if annotations.sequences[scene_token][sample_idx].sample_token != sample.sample_token:
+                    msg = "frames are in bad order compared to ground truth file"
+                    logger.error(msg)
+                    raise IndexError(msg)
+                dts_by_frame.append(
+                    [self._box_to_polygon_eval_box(dt) for dt in annotations.sequences[scene_token][sample_idx].boxes]
+                )
+        return gts_by_frame, dts_by_frame
 
     def _get_boxes_by_frame(
         self, darts: DARTS, annotations: DARTSAnnotations

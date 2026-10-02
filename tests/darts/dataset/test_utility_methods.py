@@ -104,3 +104,19 @@ def test_get_category_from_annotation(sample_annotation_record, instance_record,
     result = d.get_category_from_annotation("annotation_token")
     assert result is category
     assert result.name == "name"
+
+
+def test_get_annotations(darts_dataset):
+    test_annotations = darts_dataset.get_test_annotations()
+    number_of_boxes = 0
+    for frames in test_annotations.sequences.values():
+        for frame in frames:
+            for box in frame.boxes:
+                number_of_boxes += 1
+    assert number_of_boxes == 1
+
+
+def test_remove_test_annotations(darts_dataset):
+    new_darts = darts_dataset.remove_test_annotations()
+    assert len(new_darts.sample_annotation.all()) == 2
+    assert len(new_darts.instance.all()) == 1
